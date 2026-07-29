@@ -1,0 +1,1450 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Boerderij van Timo 🚜</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --grass:#8bc34a; --grass-dark:#6fa835; --grass-stripe:#7fbb3f;
+    --wood:#8b5a2b; --wood-dark:#6e4520;
+    --barn-red:#c1443c; --barn-red-dark:#932e28; --roof-dark:#5a3a22;
+    --coop-tan:#d9a35c; --shed-blue:#5b8aa6; --shed-blue-dark:#3f6579;
+    --sun:#ffc93c; --cream:#fff8e8; --shadow:rgba(0,0,0,0.18);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  html,body{
+    margin:0; padding:0; min-height:100%; font-family:'Baloo 2', sans-serif;
+    overflow-x:hidden; user-select:none; touch-action: manipulation;
+    transition:background 4s ease;
+  }
+  body.phase-day{    background:linear-gradient(#8fd3f4, #c9ecff 55%, #d7f0b8 55%); }
+  body.phase-sunset{ background:linear-gradient(#f6a26b, #ffd39a 55%, #d7f0b8 55%); }
+  body.phase-night{  background:linear-gradient(#1a2340, #2f3b66 55%, #37502f 55%); }
+  body.phase-dawn{   background:linear-gradient(#c3d4f0, #ffe3c2 55%, #d7f0b8 55%); }
+
+  #app{ max-width:900px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column; position:relative; }
+  .hills{ position:absolute; top:150px; left:0; right:0; height:60px; background-size:cover;
+    background-position:bottom; background-repeat:no-repeat;
+    border-radius:50% 50% 0 0 / 100% 100% 0 0; opacity:0.7; z-index:0; }
+  .tree-deco{ position:absolute; top:100px; left:6px; width:70px; height:auto; z-index:1;
+    background-size:contain; background-repeat:no-repeat; background-position:bottom; height:82px; pointer-events:none; }
+  .farmhouse-deco{ position:absolute; top:78px; right:6px; width:110px; height:110px; z-index:1;
+    background-size:contain; background-repeat:no-repeat; background-position:bottom; pointer-events:none; }
+  .stars{ position:absolute; top:0; left:0; right:0; height:170px; z-index:0; opacity:0; transition:opacity 3s ease; pointer-events:none; }
+  body.phase-night .stars{ opacity:1; }
+  .star{ position:absolute; width:3px; height:3px; background:#fff; border-radius:50%; opacity:0.85; }
+
+  header{ display:flex; align-items:center; justify-content:space-between; padding:14px 18px 4px; position:relative; z-index:5; gap:10px; }
+  .title-wrap{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+  .title-row{ display:flex; align-items:center; gap:6px; }
+  .day-counter{ font-size:0.78rem; font-weight:700; color:#5a3d1f; opacity:0.85; padding-left:4px; }
+  .level-goal{ font-size:0.68rem; font-weight:700; color:#4a6b1f; opacity:0.85; padding-left:4px; }
+  .progress-frame{ width:150px; aspect-ratio:1024/338; background-size:100% 100%; background-repeat:no-repeat;
+    position:relative; margin:3px 0 0 2px; }
+  .progress-fill{ position:absolute; top:22%; bottom:22%; left:8%; background:linear-gradient(#ffe27a,#f0c34d);
+    border-radius:999px; transition:width 0.6s ease; }
+  .title{ font-weight:800; font-size:1.35rem; color:#5a3d1f; text-shadow:0 2px 0 #fff8; outline:none;
+    border-bottom:2px dashed transparent; padding:2px 4px; max-width:100%; overflow-wrap:break-word; }
+  .title:focus{ border-bottom:2px dashed #c1443c; background:#fff6; border-radius:6px; }
+  .edit-pencil{ font-size:1rem; opacity:0.6; cursor:pointer; flex-shrink:0; }
+  .sun, .moon{ position:absolute; top:-30px; right:20px; width:90px; height:90px; border-radius:50%; transition:opacity 2s ease; }
+  .sun{ background:radial-gradient(circle, #ffe17d, var(--sun)); box-shadow:0 0 30px 10px #ffdd7688; animation:sunpulse 4s ease-in-out infinite; opacity:1; }
+  .moon{ background-size:contain; background-repeat:no-repeat; background-position:center; opacity:0; }
+  body.phase-night .sun{ opacity:0; }
+  body.phase-night .moon{ opacity:1; }
+  @keyframes sunpulse{ 50%{ transform:scale(1.06);} }
+  .coins{ background:var(--cream); border:4px solid #f0c34d; border-radius:999px; padding:8px 18px;
+    font-weight:800; font-size:1.2rem; color:#8a5a00; box-shadow:0 4px 0 var(--shadow);
+    display:flex; align-items:center; gap:6px; z-index:6; flex-shrink:0; }
+  .coins span.icon{font-size:1.4rem;}
+  .cloud{ position:absolute; opacity:0.9; transition:opacity 3s ease; }
+  body.phase-night .cloud{ opacity:0.25; }
+
+  .yard-wrap{ padding:0 16px 4px; position:relative; z-index:2; }
+  .yard{ background:#c9e7a0; border:3px dashed #8fbf5a; border-radius:14px; height:56px; position:relative; overflow:hidden; }
+  .pet{ position:absolute; bottom:6px; font-size:1.8rem; filter:drop-shadow(0 2px 2px #0003);
+    animation-name:wander; animation-timing-function:ease-in-out; animation-iteration-count:infinite; }
+
+  .fields-wrap{ padding:10px 16px 6px; position:relative; z-index:2;}
+  .section-label{ font-weight:800; color:#4a6b1f; font-size:1.05rem; margin:6px 4px; text-shadow:0 1px 0 #fff6; }
+  .fields{ display:grid; grid-template-columns:repeat(3, 1fr); gap:12px;
+    background:repeating-linear-gradient(90deg, var(--grass) 0 34px, var(--grass-stripe) 34px 68px);
+    border:6px solid var(--grass-dark); border-radius:24px; padding:14px; position:relative; overflow:hidden; }
+  .field{ position:relative; background:#a9743a;
+    background-image:repeating-linear-gradient(90deg, #9c6a35 0 8px, #a9743a 8px 16px);
+    border-radius:16px; height:112px; display:flex; align-items:center; justify-content:center;
+    cursor:pointer; border:4px solid #7a5228; transition:transform .15s; }
+  .field:active{ transform:scale(0.96); }
+  .field.stage-plowed{ background-image:repeating-linear-gradient(90deg, #6e4520 0 6px, #7a5228 6px 12px); }
+  .field.stage-fertilized{ box-shadow:inset 0 0 0 100px rgba(140,210,90,0.22); }
+  .field.locked{ background:#8a7256; background-image:none; }
+  .field .lock{ color:#fff; text-align:center; font-weight:800; }
+  .field .lock .lockicon{ font-size:1.9rem; display:block; }
+  .field .lock small{ font-size:0.8rem; opacity:0.9; }
+  .field .crop{ font-size:2.4rem; transition:transform .3s; filter:drop-shadow(0 3px 2px #0003); display:block; }
+  .field.ready .crop{ animation:bounce 0.7s ease-in-out infinite; }
+  @keyframes bounce{ 0%,100%{ transform:translateY(0) scale(1); } 50%{ transform:translateY(-10px) scale(1.08); } }
+  @keyframes glowPulse{
+    0%,100%{ box-shadow:0 0 0 0 rgba(255,201,60,0); }
+    50%{ box-shadow:0 0 16px 5px rgba(255,201,60,0.85); }
+  }
+  .affordable-glow{ animation:glowPulse 1.3s ease-in-out infinite; border-color:#ffc93c !important; }
+  .field-caption{ position:absolute; bottom:6px; left:0; right:0; text-align:center; font-size:0.72rem;
+    font-weight:800; color:#fff; text-shadow:0 1px 2px #0009; z-index:21; pointer-events:none; }
+  .field .plusone{ position:absolute; top:6px; font-weight:800; color:#ffde59; font-size:1.2rem;
+    text-shadow:0 2px 2px #0006; animation:floatup 0.9s forwards; pointer-events:none; }
+  .heart-pop{ position:absolute; bottom:52px; font-size:1.3rem; pointer-events:none; z-index:6;
+    animation:floatup 0.9s forwards; }
+  @keyframes floatup{ 0%{opacity:1; transform:translateY(0);} 100%{opacity:0; transform:translateY(-40px);} }
+  .tractor{ position:absolute; top:42%; left:-15%; transform:translateY(-50%); font-size:2.5rem;
+    z-index:20; animation:drive linear forwards; filter:drop-shadow(0 3px 2px #0004); }
+  .tractor-img{ width:66px; height:auto; display:block; transform:scaleX(-1); }
+  .field-icon-img{ width:66px; height:auto; vertical-align:middle; }
+  .field-crop-img{ width:82px; height:auto; }
+  .tool-icon-img{ width:28px; height:auto; display:block; margin:0 auto; }
+  .inline-icon-img{ width:1.35em; height:auto; vertical-align:middle; display:inline-block; }
+  @keyframes drive{ 0%{ left:-15%; } 100%{ left:115%; } }
+
+  .farmyard-wrap{ padding:10px 16px; position:relative; z-index:2;}
+  .farmyard{ display:flex; gap:10px; align-items:stretch; }
+  .barn{ flex:0 0 92px; border-radius:4px 4px 6px 6px; border:none;
+    background-size:100% 100%; background-repeat:no-repeat; background-position:center;
+    position:relative; display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+    cursor:pointer; color:#fff; font-weight:800; padding:8px 4px; text-align:center;
+    transition:transform .15s; margin-top:26px; }
+  .barn:active{ transform:scale(0.96); }
+  .barn .door{ display:none; }
+  .barn small{ font-size:0.78rem; opacity:0.95; text-shadow:0 1px 3px #000, 0 1px 3px #000; }
+
+  .pasture{ flex:1; background:#a9d96c; border:5px solid var(--wood);
+    background-image:url('images/fence.png');
+    background-position:top; background-repeat:repeat-x; background-size:auto 34px;
+    border-radius:16px; min-height:104px; position:relative; overflow:hidden; display:flex; align-items:flex-end; padding:6px; }
+  .pasture .empty-msg{ margin:auto; color:#4a6b1fbb; font-weight:700; font-size:0.9rem; text-align:center; }
+  .animal{ position:absolute; bottom:8px; font-size:2.1rem; filter:drop-shadow(0 3px 2px #0003);
+    animation-name:wander; animation-timing-function:ease-in-out; animation-iteration-count:infinite;
+    opacity:1; transition:opacity 2s ease; }
+  .animal img.inline-icon-img{ width:48px; transform:scaleX(-1); }
+  body.phase-night .animal{ opacity:0; }
+  @keyframes wander{
+    0%{ transform:translateX(0) scaleX(-1); } 45%{ transform:translateX(var(--w, 60px)) scaleX(-1); }
+    50%{ transform:translateX(var(--w, 60px)) scaleX(1); } 95%{ transform:translateX(0) scaleX(1); } 100%{ transform:translateX(0) scaleX(-1); }
+  }
+  .product{ position:absolute; font-size:1.9rem; cursor:pointer; animation:pop 0.3s ease-out; filter:drop-shadow(0 2px 2px #0003); z-index:5; }
+  @keyframes pop{ 0%{ transform:scale(0);} 100%{ transform:scale(1);} }
+
+  .coop-wrap{ padding:10px 16px; position:relative; z-index:2;}
+  .coop-row{ display:flex; gap:10px; align-items:stretch; }
+  .coop{ flex:0 0 92px; border-radius:4px 4px 6px 6px; border:none;
+    background-size:100% 100%; background-repeat:no-repeat; background-position:center;
+    position:relative; display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+    cursor:pointer; color:#5a3d1f; font-weight:800; padding:8px 4px; text-align:center;
+    transition:transform .15s; margin-top:22px; }
+  .coop:active{ transform:scale(0.96); }
+  .coop small{ font-size:0.78rem; text-shadow:0 1px 3px #fff, 0 1px 3px #fff; }
+  .chicken-yard{ flex:1; background:#e4cf9a; border:5px solid var(--wood);
+    background-image:url('images/fence.png');
+    background-position:top; background-repeat:repeat-x; background-size:auto 34px;
+    border-radius:16px; min-height:94px; position:relative; overflow:hidden; display:flex; align-items:flex-end; padding:6px; }
+  .chicken-yard .empty-msg{ margin:auto; color:#8a6b3fbb; font-weight:700; font-size:0.9rem; text-align:center; }
+  .chicken{ position:absolute; bottom:8px; font-size:1.9rem; filter:drop-shadow(0 2px 2px #0003);
+    animation-name:wander; animation-timing-function:ease-in-out; animation-iteration-count:infinite; cursor:default;
+    opacity:1; transition:opacity 2s ease; }
+  body.phase-night .chicken{ opacity:0; }
+
+  .shed-wrap{ padding:10px 16px; position:relative; z-index:2; }
+  .shed-row{ display:flex; gap:10px; }
+  .shed{ flex:0 0 92px; border-radius:4px 4px 6px 6px; border:none;
+    background-size:100% 100%; background-repeat:no-repeat; background-position:center;
+    position:relative; display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+    padding:8px 4px; text-align:center; color:#fff; font-weight:800; margin-top:22px; }
+  .shed small{ font-size:0.78rem; text-shadow:0 1px 3px #000, 0 1px 3px #000; }
+  .tools{ flex:1; display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .tool-card{ background:#fff; border:3px solid #e5d3a8; border-radius:14px; padding:8px 4px; text-align:center;
+    font-weight:700; color:#5a3d1f; cursor:pointer; }
+  .tool-card:active{ transform:scale(0.96); }
+  .tool-card .em{ font-size:1.7rem; display:block; }
+  .tool-card .price{ font-size:0.8rem; color:#8a5a00; }
+  .tool-card .desc{ font-size:0.66rem; font-weight:600; color:#8a6b4a; margin-top:2px; }
+  .tool-card.owned{ background:#e4f5d6; border-color:#8fbf5a; cursor:default; }
+  .tool-card.owned .price{ color:#4a6b1f; }
+  .tool-card.disabled{ opacity:0.5; }
+
+  .shop-wrap{ padding:10px 16px 28px; position:relative; z-index:2;}
+  .reset-wrap{ padding:0 16px 20px; text-align:center; position:relative; z-index:2; }
+  .reset-btn{ background:none; border:none; color:#8a6b4a; opacity:0.65; font-family:inherit;
+    font-size:0.8rem; font-weight:700; cursor:pointer; padding:6px 10px; text-decoration:underline; }
+  .reset-btn:active{ opacity:1; }
+  .stock-wrap{ padding:10px 16px; position:relative; z-index:2; }
+  .stock-table{ background:var(--cream); border:3px solid #e5d3a8; border-radius:16px; padding:10px 16px; }
+  .stock-row{ display:flex; justify-content:space-between; align-items:center; padding:5px 0; font-weight:700; color:#5a3d1f; font-size:0.98rem; }
+  .stock-row + .stock-row{ border-top:1px dashed #e5d3a8; }
+  .stock-row .em{ font-size:1.3rem; margin-right:8px; }
+  .stock-empty{ text-align:center; color:#8a6b4a; font-weight:600; padding:6px 0; }
+  .shop-btn{ width:100%; background:var(--wood); border:4px solid var(--wood-dark); border-radius:18px;
+    padding:14px; color:#fff8e8; font-weight:800; font-size:1.15rem; display:flex; align-items:center; justify-content:center; gap:10px;
+    cursor:pointer; box-shadow:0 5px 0 var(--shadow); }
+  .shop-btn:active{ transform:translateY(3px); box-shadow:0 2px 0 var(--shadow); }
+
+  .overlay{ position:fixed; inset:0; background:rgba(30,20,10,0.45); display:none; align-items:center; justify-content:center; z-index:100; padding:20px; }
+  .overlay.show{ display:flex; }
+  .modal{ background:var(--cream); border-radius:24px; border:5px solid #f0c34d; padding:0; position:relative;
+    max-width:420px; width:100%; box-shadow:0 10px 0 var(--shadow); }
+  .modal-scroll{ padding:20px; max-height:80vh; overflow-y:auto; border-radius:19px; }
+  .modal-close-x{ position:absolute; top:-16px; right:-16px; width:38px; height:38px; border-radius:50%;
+    background:none; border:none; padding:0; cursor:pointer; z-index:10; filter:drop-shadow(0 3px 2px #0005); }
+  .modal-close-x:active{ transform:translateY(2px); }
+  .modal h2{ margin:0 0 12px; color:#5a3d1f; font-size:1.3rem; text-align:center; }
+  .modal-subheading{ font-weight:800; color:#5a3d1f; font-size:0.92rem; margin:2px 0 8px; }
+  .grid-choices{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .choice{ background:#fff; border:3px solid #e5d3a8; border-radius:16px; padding:12px 6px; text-align:center;
+    cursor:pointer; font-weight:700; color:#5a3d1f; }
+  .choice:active{ transform:scale(0.95); }
+  .choice .em{ font-size:2.1rem; display:block; margin-bottom:4px;}
+  .choice .price{ color:#8a5a00; font-size:0.88rem; margin-top:2px; }
+  .choice .price.sell{ color:#4a6b1f; }
+  .choice.disabled{ opacity:0.4; }
+  .choice.locked .em{ opacity:0.5; }
+  .choice.locked .price{ color:#a55; }
+  .close-btn{ display:block; margin:16px auto 0; background:#e5d3a8; border:none; border-radius:999px;
+    padding:10px 26px; font-weight:800; font-family:inherit; font-size:1.02rem; color:#5a3d1f; cursor:pointer; }
+  .sell-row{ display:flex; align-items:center; justify-content:space-between; background:#fff;
+    border:3px solid #e5d3a8; border-radius:14px; padding:10px 14px; margin-bottom:10px; }
+  .sell-row .left{ display:flex; align-items:center; gap:10px; font-weight:700; color:#5a3d1f;}
+  .sell-row .left .em{ font-size:1.7rem; }
+  .sell-btn{ background:var(--grass-dark); color:#fff; border:none; border-radius:999px;
+    padding:8px 16px; font-weight:800; font-family:inherit; cursor:pointer; }
+  .empty-shop{ text-align:center; color:#8a6b4a; font-weight:600; padding:10px 0 4px; }
+
+  .rain{ position:fixed; inset:0; pointer-events:none; z-index:50; opacity:0; transition:opacity 1s ease; }
+  .rain.active{ opacity:1; }
+  .drop{ position:absolute; top:-20px; width:2px; height:16px; background:#7fb8e8; opacity:0.7; animation:fall linear infinite; }
+  @keyframes fall{ to{ transform:translateY(110vh); } }
+
+  .confetti{ position:fixed; inset:0; pointer-events:none; z-index:200; }
+  .confetti-piece{ position:absolute; top:-20px; width:10px; height:10px; animation:confettifall 2.2s linear forwards; }
+  @keyframes confettifall{ to{ transform:translateY(110vh) rotate(400deg); } }
+  .milestone-toast{ position:fixed; top:20%; left:50%; transform:translate(-50%,-20px); background:var(--cream);
+    border:4px solid #f0c34d; border-radius:20px; padding:16px 24px; font-weight:800; color:#5a3d1f; font-size:1.15rem;
+    text-align:center; z-index:201; box-shadow:0 8px 0 var(--shadow); opacity:0; transition:opacity .4s ease, transform .4s ease; }
+  .milestone-toast.show{ opacity:1; transform:translate(-50%,0); }
+</style>
+</head>
+<body class="phase-day">
+<div class="rain" id="rain"></div>
+<div id="app">
+  <div class="hills"></div>
+  <div class="tree-deco" id="treeDeco"></div>
+  <div class="farmhouse-deco" id="farmhouseDeco"></div>
+  <div class="stars" id="stars"></div>
+  <div class="sun"></div>
+  <div class="moon"></div>
+  <header>
+    <div class="title-wrap">
+      <div class="title-row">
+        <div class="title" id="farmTitle" contenteditable="true" spellcheck="false">Boerderij van Timo 🚜</div>
+        <span class="edit-pencil">✏️</span>
+      </div>
+      <div class="day-counter" id="dayCounter">📅 Dag 1 · ⭐ Niveau 1</div>
+      <div class="level-goal" id="levelGoal"></div>
+      <div class="progress-frame" id="progressFrame"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+    <div class="coins"><span class="icon"><img class="inline-icon-img" src="images/coin.png" alt="munten" style="width:1.4rem;"></span><span id="coinCount">8</span></div>
+  </header>
+
+  <div class="yard-wrap"><div class="yard" id="yard"></div></div>
+
+  <div class="fields-wrap">
+    <div class="section-label">🌾 De akker</div>
+    <div class="fields" id="fields"></div>
+  </div>
+
+  <div class="farmyard-wrap">
+    <div class="section-label">🐾 De wei en de schuren</div>
+    <div class="farmyard">
+      <div class="barn" id="barn0"><div class="door"></div><small>Schuur 1</small></div>
+      <div class="pasture" id="pasture"><div class="empty-msg">Nog geen dieren!</div></div>
+      <div class="barn" id="barn1"><div class="door"></div><small>Schuur 2</small></div>
+    </div>
+  </div>
+
+  <div class="coop-wrap">
+    <div class="section-label">🐔 Het kippenhok</div>
+    <div class="coop-row">
+      <div class="coop" id="coopBtn"><small>Kippenhok</small></div>
+      <div class="chicken-yard" id="chickenYard"><div class="empty-msg">Nog geen kippen!</div></div>
+    </div>
+  </div>
+
+  <div class="shed-wrap">
+    <div class="section-label">🧰 De gereedschapsschuur</div>
+    <div class="shed-row">
+      <div class="shed"><small>Schuur 3</small></div>
+      <div class="tools" id="tools"></div>
+    </div>
+  </div>
+
+  <div class="stock-wrap">
+    <div class="section-label"><img class="inline-icon-img" id="wheelbarrowIcon" alt="voorraad"> Voorraad</div>
+    <div class="stock-table" id="stockTable"></div>
+  </div>
+
+  <div class="shop-wrap"><div class="shop-btn" id="shopBtn">🏪 Naar de boerderijwinkel</div></div>
+
+  <div class="reset-wrap"><button class="reset-btn" id="resetBtn">🔄 Spel opnieuw beginnen</button></div>
+</div>
+
+<div class="overlay" id="cropOverlay">
+  <div class="modal"><div class="modal-scroll"><h2>Wat wil je zaaien? 🌱</h2><div class="grid-choices" id="cropChoices"></div><button class="close-btn" id="closeCrop">Sluiten</button></div></div>
+</div>
+<div class="overlay" id="animalOverlay">
+  <div class="modal"><div class="modal-scroll"><h2>Dieren beheren 🐄</h2><div id="animalOwnedList"></div><div class="grid-choices" id="animalChoices"></div><button class="close-btn" id="closeAnimal">Sluiten</button></div></div>
+</div>
+<div class="overlay" id="coopOverlay">
+  <div class="modal"><div class="modal-scroll"><h2>Kippen beheren 🐔</h2><div id="coopOwnedList"></div><div class="grid-choices" id="coopChoices"></div><button class="close-btn" id="closeCoop">Sluiten</button></div></div>
+</div>
+<div class="overlay" id="confirmOverlay">
+  <div class="modal"><div class="modal-scroll"><h2 id="confirmTitle"></h2>
+    <div style="text-align:center; margin:14px 0;"><button class="sell-btn" id="confirmYes">Verkopen</button></div>
+    <button class="close-btn" id="confirmNo">Annuleren</button>
+  </div></div>
+</div>
+<div class="overlay" id="choresOverlay">
+  <div class="modal"><div class="modal-scroll"><h2>🚜 Boerderijtijd!</h2><div id="choresList"></div><button class="close-btn" id="closeChores">Later</button></div></div>
+</div>
+<div class="overlay" id="shopOverlay">
+  <div class="modal"><div class="modal-scroll"><h2>🏪 Winkel</h2><div id="shopList"></div><button class="close-btn" id="closeShop">Sluiten</button></div></div>
+</div>
+
+<script>
+const TRACTOR_IMG = "images/tractor.png";
+const WHEAT_IMG = "images/wheat.png";
+
+const CARROT_IMG = "images/carrot.png";
+const CORN_IMG = "images/corn.png";
+const POTATO_IMG = "images/potato.png";
+
+// CROP_IMAGES is defined further below, after all individual crop image constants
+const SPROUT_IMG = "images/sprout.png";
+const WHEAT_GROW_IMG = "images/wheat-grow.png";
+const CARROT_GROW_IMG = "images/carrot-grow.png";
+const CORN_GROW_IMG = "images/corn-grow.png";
+const PUMPKIN_GROW_IMG = "images/pumpkin-grow.png";
+const POTATO_GROW_IMG = "images/potato-grow.png";
+const STRAWBERRY_GROW_IMG = "images/strawberry-grow.png";
+const EGGPLANT_GROW_IMG = "images/eggplant-grow.png";
+const CUCUMBER_GROW_IMG = "images/cucumber-grow.png";
+const TOMATO_GROW_IMG = "images/tomato-grow.png";
+const BROCCOLI_GROW_IMG = "images/broccoli-grow.png";
+const GRASS_GREEN_IMG = "images/grass-green.png";
+const GRASS_GOLD_IMG = "images/grass-gold.png";
+const PLOWED_TEX_IMG = "images/plowed-tex.png";
+const SOIL_BEGIN_IMG = "images/soil-begin.png";
+const SOIL_PLOWED_IMG = "images/soil-plowed.png";
+const SOIL_FERTILIZED_IMG = "images/soil-fertilized.png";
+const HORSE_IMG = "images/horse.png";
+const PIG_IMG = "images/pig.png";
+const COW_IMG = "images/cow.png";
+const GOAT_IMG = "images/goat.png";
+const SHEEP_IMG = "images/sheep.png";
+
+const HARVESTER_IMG = "images/harvester.png";
+const COMPOST_PILE_IMG = "images/compost-pile.png";
+const COMPOST_CART_IMG = "images/compost-cart.png";
+const SPREADER_IMG = "images/spreader.png";
+const SPRINKLER_IMG = "images/sprinkler.png";
+
+const STAR_ICON_IMG = "images/star-icon.png";
+const PROGRESS_FRAME_IMG = "images/progress-frame.png";
+const BACK_ARROW_IMG = "images/back-arrow.png";
+const CART_ICON_IMG = "images/cart-icon.png";
+const CHECK_ICON_IMG = "images/check-icon.png";
+
+const CLOSE_X_IMG = "images/close-x.png";
+const SHOP_FRAME_IMG = "images/shop-frame.png";
+const CHORES_FRAME_IMG = "images/chores-frame.png";
+const FEED_HEART_IMG = "images/feed-heart.png";
+
+const EGGPLANT_SEED_IMG = "images/eggplant-seed.png";
+const HAY_SEED_IMG = "images/hay-seed.png";
+const BROCCOLI_SEED_IMG = "images/broccoli-seed.png";
+const CUCUMBER_SEED_IMG = "images/cucumber-seed.png";
+const STRAWBERRY_SEED_IMG = "images/strawberry-seed.png";
+
+const LEEK_SEED_IMG = "images/leek-seed.png";
+const WHEAT_SEED_IMG = "images/wheat-seed.png";
+const CARROT_SEED_IMG = "images/carrot-seed.png";
+const CORN_SEED_IMG = "images/corn-seed.png";
+const PUMPKIN_SEED_IMG = "images/pumpkin-seed.png";
+const POTATO_SEED_IMG = "images/potato-seed.png";
+
+const WHEAT_HARVEST_IMG = "images/wheat-harvest.png";
+const HAY_HARVEST_IMG = "images/hay-harvest.png";
+const BROCCOLI_HARVEST_IMG = "images/broccoli-harvest.png";
+const TOMATO_HARVEST_IMG = "images/tomato-harvest.png";
+const CUCUMBER_HARVEST_IMG = "images/cucumber-harvest.png";
+
+const EGGPLANT_HARVEST_IMG = "images/eggplant-harvest.png";
+const STRAWBERRY_HARVEST_IMG = "images/strawberry-harvest.png";
+const POTATO_HARVEST_IMG = "images/potato-harvest.png";
+const PUMPKIN_HARVEST_IMG = "images/pumpkin-harvest.png";
+const CORN_HARVEST_IMG = "images/corn-harvest.png";
+
+const CARROT_HARVEST_IMG = "images/carrot-harvest.png";
+const LEEK_HARVEST_IMG = "images/leek-harvest.png";
+const TOOLSHED_BLDG_IMG = "images/toolshed-bldg.png";
+const COOP_BLDG_IMG = "images/coop-bldg.png";
+const BARN_BLDG_IMG = "images/barn-bldg.png";
+
+const TREE_IMG = "images/tree.png";
+const MOON_IMG = "images/moon.png";
+const HILLS_IMG = "images/hills.png";
+const RABBIT_IMG = "images/rabbit.png";
+const CHICKEN_IMG = "images/chicken.png";
+
+const DUCK_IMG = "images/duck.png";
+const WHEELBARROW_IMG = "images/wheelbarrow.png";
+
+const MILK_IMG = "images/milk.png";
+const WOOL_IMG = "images/wool.png";
+const EGG_IMG = "images/egg.png";
+const COIN_IMG = "images/coin.png";
+const FENCE_IMG = "images/fence.png";
+const FARMHOUSE_IMG = "images/farmhouse.png";
+const SUN_IMG = "images/sun.png";
+const CLOUD_IMG = "images/cloud.png";
+const RAKE_IMG = "images/hay-rake.png";
+const SEEDS_MIX_IMG = "images/seeds-mix.png";
+const MISC_ICON_IMAGES = { milk:MILK_IMG, wool:WOOL_IMG, egg:EGG_IMG };
+function coinIcon(){ return `<img class="inline-icon-img" src="${COIN_IMG}" alt="munt">`; }
+function productIcon(key, em){
+  const img = MISC_ICON_IMAGES[key];
+  if(img) return `<img class="inline-icon-img" src="${img}" alt="${key}">`;
+  return em;
+}
+
+function cropIcon(key, em){
+  const img = CROP_IMAGES[key];
+  if(img) return `<img class="inline-icon-img" src="${img}" alt="${key}">`;
+  return em;
+}
+
+const CROP_HARVEST_IMAGES = {
+  wheat:WHEAT_HARVEST_IMG, hay:HAY_HARVEST_IMG, broccoli:BROCCOLI_HARVEST_IMG,
+  tomato:TOMATO_HARVEST_IMG, cucumber:CUCUMBER_HARVEST_IMG, eggplant:EGGPLANT_HARVEST_IMG,
+  strawberry:STRAWBERRY_HARVEST_IMG, potato:POTATO_HARVEST_IMG, pumpkin:PUMPKIN_HARVEST_IMG,
+  corn:CORN_HARVEST_IMG, carrot:CARROT_HARVEST_IMG, leek:LEEK_HARVEST_IMG,
+};
+function harvestIcon(key, em){
+  const img = CROP_HARVEST_IMAGES[key] || CROP_IMAGES[key] || MISC_ICON_IMAGES[key];
+  if(img) return `<img class="inline-icon-img" src="${img}" alt="${key}">`;
+  return em;
+}
+
+const ANIMAL_IMAGES = { horse:HORSE_IMG, pig:PIG_IMG, cow:COW_IMG, goat:GOAT_IMG, sheep:SHEEP_IMG, rabbit:RABBIT_IMG, duck:DUCK_IMG };
+function animalIcon(key, em){
+  const img = ANIMAL_IMAGES[key];
+  if(img) return `<img class="inline-icon-img" src="${img}" alt="${key}">`;
+  return em;
+}
+
+const CROP_GROW_IMAGES = {
+  wheat:WHEAT_GROW_IMG, carrot:CARROT_GROW_IMG, corn:CORN_GROW_IMG, pumpkin:PUMPKIN_GROW_IMG,
+  potato:POTATO_GROW_IMG, strawberry:STRAWBERRY_GROW_IMG, eggplant:EGGPLANT_GROW_IMG,
+  cucumber:CUCUMBER_GROW_IMG, tomato:TOMATO_GROW_IMG, broccoli:BROCCOLI_GROW_IMG,
+  leek:SPROUT_IMG,
+};
+
+const CROP_IMAGES = {
+  wheat:WHEAT_SEED_IMG, carrot:CARROT_SEED_IMG, corn:CORN_SEED_IMG, potato:POTATO_SEED_IMG,
+  pumpkin:PUMPKIN_SEED_IMG, strawberry:STRAWBERRY_SEED_IMG, eggplant:EGGPLANT_SEED_IMG,
+  cucumber:CUCUMBER_SEED_IMG, tomato:TOMATO_GROW_IMG, broccoli:BROCCOLI_SEED_IMG,
+  hay:HAY_SEED_IMG, leek:LEEK_SEED_IMG,
+};
+
+/* ---------- Sound ---------- */
+let audioCtx = null;
+function beep(freq=440, duration=120, type='sine', vol=0.14){
+  try{
+    if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type; osc.frequency.value = freq; gain.gain.value = vol;
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start();
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration/1000);
+    osc.stop(audioCtx.currentTime + duration/1000);
+  }catch(e){}
+}
+function soundPlow(){ beep(280,160,'sawtooth',0.12); setTimeout(()=>beep(240,160,'sawtooth',0.1),130); }
+function soundFertilize(){ beep(700,80,'sine'); setTimeout(()=>beep(850,80,'sine'),80); setTimeout(()=>beep(1000,100,'sine'),160); }
+function soundPlant(){ beep(520,90,'triangle'); }
+function soundHarvest(){ beep(760,150,'triangle'); setTimeout(()=>beep(950,120,'triangle'),90); }
+function soundBuy(){ beep(320,160,'square'); }
+function soundCollect(){ beep(900,90,'sine'); }
+function soundSell(){ beep(600,110,'sawtooth',0.1); setTimeout(()=>beep(800,140,'sawtooth',0.1),100); }
+function soundUnlock(){ beep(500,90,'sine'); setTimeout(()=>beep(700,90,'sine'),90); setTimeout(()=>beep(950,160,'sine'),180); }
+function soundCelebrate(){ [520,660,780,1040].forEach((f,i)=>setTimeout(()=>beep(f,180,'triangle',0.16), i*140)); }
+
+function sweep(f1, f2, duration=300, type='sine', vol=0.15){
+  try{
+    if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(f1, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(Math.max(f2,1), audioCtx.currentTime + duration/1000);
+    gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration/1000);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + duration/1000);
+  }catch(e){}
+}
+function soundCow(){ sweep(180,90,500,'sawtooth',0.16); }
+function soundHorse(){ beep(500,70,'square',0.12); setTimeout(()=>beep(650,70,'square',0.12),80); setTimeout(()=>sweep(700,420,220,'square',0.12),160); }
+function soundPig(){ beep(220,80,'square',0.15); setTimeout(()=>beep(180,120,'square',0.15),70); }
+function soundGoat(){ sweep(300,420,140,'triangle',0.15); setTimeout(()=>sweep(420,300,140,'triangle',0.15),140); }
+function soundSheep(){ sweep(320,260,320,'triangle',0.14); }
+function soundChicken(){ beep(900,60,'square',0.13); setTimeout(()=>beep(1100,60,'square',0.13),70); setTimeout(()=>beep(950,80,'square',0.13),140); }
+function soundDuck(){ beep(500,80,'square',0.13); setTimeout(()=>beep(440,90,'square',0.13),90); }
+function soundRabbit(){ beep(750,50,'sine',0.1); setTimeout(()=>beep(750,50,'sine',0.1),90); }
+const ANIMAL_SOUNDS = { cow:soundCow, horse:soundHorse, pig:soundPig, goat:soundGoat, sheep:soundSheep, duck:soundDuck, rabbit:soundRabbit };
+
+function soundMow(){ beep(650,50,'sawtooth',0.13); setTimeout(()=>beep(600,50,'sawtooth',0.13),80); setTimeout(()=>beep(650,50,'sawtooth',0.13),160); }
+function soundTed(){ beep(500,60,'triangle',0.12); setTimeout(()=>beep(680,60,'triangle',0.12),90); }
+function soundBale(){ beep(220,220,'square',0.15); }
+
+/* ---------- Day / night cycle ---------- */
+const PHASES = ['phase-day','phase-sunset','phase-night','phase-dawn'];
+let phaseIndex = 0;
+function makeStars(){
+  const starsEl = document.getElementById('stars');
+  for(let i=0;i<24;i++){
+    const s = document.createElement('div');
+    s.className = 'star';
+    s.style.left = Math.random()*100 + '%';
+    s.style.top = Math.random()*140 + 'px';
+    s.style.opacity = 0.4 + Math.random()*0.6;
+    starsEl.appendChild(s);
+  }
+}
+makeStars();
+let dayCount = 1;
+setInterval(() => {
+  phaseIndex = (phaseIndex + 1) % PHASES.length;
+  document.body.className = PHASES[phaseIndex];
+  if(phaseIndex === 0){ dayCount++; updateLevelUI(); checkLevelUp(); saveGame(); }
+}, 20000);
+
+/* ---------- Weather ---------- */
+const rainEl = document.getElementById('rain');
+let isRaining = false;
+function startRain(){
+  isRaining = true;
+  rainEl.innerHTML = '';
+  for(let i=0;i<40;i++){
+    const d = document.createElement('div');
+    d.className = 'drop';
+    d.style.left = Math.random()*100 + '%';
+    d.style.animationDuration = (0.5 + Math.random()*0.4) + 's';
+    d.style.animationDelay = (Math.random()*1) + 's';
+    rainEl.appendChild(d);
+  }
+  rainEl.classList.add('active');
+  setTimeout(() => { rainEl.classList.remove('active'); isRaining = false; }, 8000);
+}
+function scheduleRain(){ setTimeout(() => { startRain(); scheduleRain(); }, 25000 + Math.random()*25000); }
+scheduleRain();
+
+/* ---------- Celebration ---------- */
+function celebrate(message){
+  soundCelebrate();
+  const conf = document.createElement('div');
+  conf.className = 'confetti';
+  const colors = ['#ffc93c','#c1443c','#6fa835','#5b8aa6','#e07b39'];
+  for(let i=0;i<36;i++){
+    const p = document.createElement('div');
+    p.className = 'confetti-piece';
+    p.style.left = Math.random()*100 + '%';
+    p.style.background = colors[Math.floor(Math.random()*colors.length)];
+    p.style.animationDelay = (Math.random()*0.4) + 's';
+    p.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+    conf.appendChild(p);
+  }
+  document.body.appendChild(conf);
+  setTimeout(() => conf.remove(), 2800);
+
+  const toast = document.createElement('div');
+  toast.className = 'milestone-toast';
+  toast.innerHTML = message;
+  document.body.appendChild(toast);
+  requestAnimationFrame(() => toast.classList.add('show'));
+  setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 500); }, 2600);
+}
+let level = 1;
+const LEVEL_GOALS = [
+  { label:'Open de eerste 3 velden', check: () => fieldsUnlocked.slice(0,3).every(Boolean),                        progress: () => fieldsUnlocked.slice(0,3).filter(Boolean).length / 3,                                                          message:'🎉 Level 2! De akker begint vorm te krijgen!', reward:10 },
+  { label:'Ontgrendel alle zaadjes', check: () => CROPS.filter(c => c.tier <= 2).every(c => unlockedCrops.has(c.key)), progress: () => { const t = CROPS.filter(c => c.tier <= 2); return t.filter(c => unlockedCrops.has(c.key)).length / t.length; }, message:'🌟 Level 3! Alle zaden ontgrendeld!',       reward:15 },
+  { label:'Heb 4 dieren tegelijk in de wei', check: () => pastureEl.querySelectorAll('.animal').length >= ANIMAL_CAPACITY_START, progress: () => Math.min(1, pastureEl.querySelectorAll('.animal').length / ANIMAL_CAPACITY_START), message:'🐾 Level 4! De wei zit lekker vol!',      reward:15 },
+  { label:'Koop al het gereedschap', check: () => TOOLS.every(t => equipment[t.key]),                                progress: () => TOOLS.filter(t => equipment[t.key]).length / TOOLS.length,                                                       message:'🧰 Level 5! Alle gereedschap in huis!',     reward:20 },
+  { label:'Bereik dag 7',            check: () => dayCount >= 7,                                                   progress: () => Math.min(1, dayCount / 7),                                                                                       message:'📅 Level 6! Een hele week geboerd!',        reward:25 },
+  { label:'Open alle 6 velden',      check: () => fieldsUnlocked.every(Boolean),                                   progress: () => fieldsUnlocked.filter(Boolean).length / fieldsUnlocked.length,                                                  message:'🚜 Level 7! Een enorme boerderij!',         reward:30 },
+  { label:'Bouw de wei en het ren helemaal uit', check: () => animalCapacity >= ANIMAL_CAPACITY_MAX && chickenCapacity >= CHICKEN_CAPACITY_MAX, progress: () => Math.min(1, ((animalCapacity/ANIMAL_CAPACITY_MAX) + (chickenCapacity/CHICKEN_CAPACITY_MAX)) / 2), message:'👑 Level 8! De grootste boerderij van het dorp!', reward:40 },
+];
+function levelMultiplier(){ return 1 + (level - 1) * 0.15; }
+function cost(base){ return Math.ceil(base * levelMultiplier()); }
+function updateLevelUI(){
+  document.getElementById('dayCounter').innerHTML = `📅 Dag ${dayCount} · <img class="inline-icon-img" src="${STAR_ICON_IMG}" alt="ster"> Niveau ${level}`;
+  const goalEl = document.getElementById('levelGoal');
+  const fillEl = document.getElementById('progressFill');
+  if(level - 1 < LEVEL_GOALS.length){
+    const goal = LEVEL_GOALS[level-1];
+    goalEl.textContent = `🎯 ${goal.label}`; goalEl.style.display = '';
+    const pct = Math.max(0, Math.min(1, goal.progress ? goal.progress() : 0));
+    fillEl.style.width = `calc(${(pct*100).toFixed(0)}% - ${pct>0?16:0}px)`;
+    document.getElementById('progressFrame').style.display = '';
+  }
+  else { goalEl.style.display = 'none'; document.getElementById('progressFrame').style.display = 'none'; }
+}
+function checkLevelUp(){
+  while(level - 1 < LEVEL_GOALS.length && LEVEL_GOALS[level-1].check()){
+    const goal = LEVEL_GOALS[level-1];
+    level++;
+    coins += goal.reward;
+    coinCountEl.textContent = coins;
+    celebrate(`${goal.message} (+${goal.reward} ${coinIcon()})`);
+  }
+  updateLevelUI();
+  renderTools();
+  refreshFieldLockGlow();
+  saveGame();
+}
+
+/* ---------- Data ---------- */
+let coins = 8;
+
+const CROPS = [
+  { key:'wheat',      em:'🌾', name:'Tarwe',      growMs:5000,  price:2,  unlockCost:0,  plantCost:1,  tier:1 },
+  { key:'carrot',     em:'🥕', name:'Wortel',     growMs:8000,  price:3,  unlockCost:10, plantCost:2,  tier:1 },
+  { key:'corn',       em:'🌽', name:'Mais',       growMs:12000, price:4,  unlockCost:20, plantCost:3,  tier:2 },
+  { key:'pumpkin',    em:'🎃', name:'Pompoen',    growMs:18000, price:6,  unlockCost:35, plantCost:5,  tier:2 },
+  { key:'potato',     em:'🥔', name:'Aardappel',  growMs:20000, price:8,  unlockCost:50, plantCost:6,  tier:3 },
+  { key:'strawberry', em:'🍓', name:'Aardbei',    growMs:22000, price:9,  unlockCost:55, plantCost:7,  tier:3 },
+  { key:'eggplant',   em:'🍆', name:'Aubergine',  growMs:25000, price:11, unlockCost:70, plantCost:8,  tier:4 },
+  { key:'cucumber',   em:'🥒', name:'Komkommer',  growMs:26000, price:12, unlockCost:75, plantCost:9,  tier:4 },
+  { key:'tomato',     em:'🍅', name:'Tomaat',     growMs:28000, price:14, unlockCost:90, plantCost:10, tier:5 },
+  { key:'broccoli',   em:'🥦', name:'Broccoli',   growMs:30000, price:15, unlockCost:95, plantCost:11, tier:5 },
+  { key:'hay',        em:'🌾', name:'Gras',       growMs:6000,  price:8,  unlockCost:15, plantCost:2,  tier:2 },
+  { key:'leek',       em:'🥬', name:'Prei',       growMs:32000, price:17, unlockCost:105,plantCost:12, tier:6 },
+];
+const CROP_BY_KEY = Object.fromEntries(CROPS.map(c => [c.key, c]));
+const unlockedCrops = new Set(['wheat']);
+
+const FIELD_COSTS = [0, 15, 30, 50, 80, 120];
+const fieldsUnlocked = [true, false, false, false, false, false];
+
+const PLOW_TIME_BASE = 4000, PLOW_TIME_FAST = 1500;
+const FERTILIZE_TIME_BASE = 4000, FERTILIZE_TIME_FAST = 1500;
+
+const ANIMALS = [
+  { key:'cow',    em:'🐄', name:'Koe',    price:15 },
+  { key:'horse',  em:'🐴', name:'Paard',  price:20 },
+  { key:'pig',    em:'🐷', name:'Varken', price:10 },
+  { key:'goat',   em:'🐐', name:'Geit',   price:8  },
+  { key:'sheep',  em:'🐑', name:'Schaap', price:8  },
+  { key:'duck',   em:'🦆', name:'Eend',   price:6  },
+  { key:'rabbit', em:'🐇', name:'Konijn', price:7  },
+];
+const ANIMAL_PRODUCTS = { cow:{key:'milk',em:'🥛'}, sheep:{key:'wool',em:'🧶'}, goat:{key:'wool',em:'🧶'} };
+const PRODUCT_INFO = { milk:{em:'🥛',name:'Melk',price:4}, wool:{em:'🧶',name:'Wol',price:5} };
+const EGG_PRICE = 3;
+const CHICKEN_PRICE = 6;
+const ANIMAL_CAPACITY_START = 4, ANIMAL_CAPACITY_MAX = 10, ANIMAL_CAPACITY_STEP = 2;
+let animalCapacity = ANIMAL_CAPACITY_START;
+function pastureExpansionCost(){ return cost(20 + ((animalCapacity - ANIMAL_CAPACITY_START) / ANIMAL_CAPACITY_STEP) * 15); }
+
+const CHICKEN_CAPACITY_START = 4, CHICKEN_CAPACITY_MAX = 10, CHICKEN_CAPACITY_STEP = 2;
+let chickenCapacity = CHICKEN_CAPACITY_START;
+function coopExpansionCost(){ return cost(15 + ((chickenCapacity - CHICKEN_CAPACITY_START) / CHICKEN_CAPACITY_STEP) * 12); }
+
+const TOOLS = [
+  { key:'plow',       em:'🚜', name:'Ploeg',         price:12, desc:'Ploegen gaat sneller' },
+  { key:'harvester',  em:'🌾', name:'Oogstmachine',  price:18, desc:'Dubbele oogst' },
+  { key:'fertilizer', em:'🌿', name:'Mest',          price:15, desc:'Sneller + betere prijs' },
+  { key:'sower',      em:'🌱', name:'Zaaimachine',   price:25, desc:'Zaaien gaat sneller' },
+  { key:'sprinkler',  em:'🚿', name:'Sproeier',      price:30, desc:'Gewassen groeien altijd wat sneller' },
+];
+const equipment = { plow:false, harvester:false, fertilizer:false, sower:false, sprinkler:false };
+
+const fieldsState = [ {stage:'bare'}, {stage:'bare'}, {stage:'bare'}, {stage:'bare'}, {stage:'bare'}, {stage:'bare'} ];
+const inventory = {};
+const products = {};
+let eggCount = 0;
+let activeFieldIndex = null;
+const animalsOwned = [];
+const chickensOwned = [];
+
+/* ---------- Elements ---------- */
+const coinCountEl = document.getElementById('coinCount');
+const fieldsEl = document.getElementById('fields');
+const pastureEl = document.getElementById('pasture');
+const chickenYardEl = document.getElementById('chickenYard');
+const toolsEl = document.getElementById('tools');
+const cropOverlay = document.getElementById('cropOverlay');
+const cropChoicesEl = document.getElementById('cropChoices');
+const animalOverlay = document.getElementById('animalOverlay');
+const animalChoicesEl = document.getElementById('animalChoices');
+const coopOverlay = document.getElementById('coopOverlay');
+const coopChoicesEl = document.getElementById('coopChoices');
+const shopOverlay = document.getElementById('shopOverlay');
+const shopListEl = document.getElementById('shopList');
+const confirmOverlay = document.getElementById('confirmOverlay');
+const confirmTitleEl = document.getElementById('confirmTitle');
+const confirmYesEl = document.getElementById('confirmYes');
+let pendingSellAction = null;
+confirmYesEl.addEventListener('click', () => { if(pendingSellAction) pendingSellAction(); confirmOverlay.classList.remove('show'); });
+document.getElementById('confirmNo').addEventListener('click', () => confirmOverlay.classList.remove('show'));
+function askSell(title, action, yesLabel){
+  confirmTitleEl.textContent = title;
+  confirmYesEl.textContent = yesLabel || 'Verkopen';
+  pendingSellAction = action;
+  confirmOverlay.classList.add('show');
+}
+function ensureEmptyMsg(container, selector, text){
+  if(!container.querySelector(selector) && !container.querySelector('.empty-msg')){
+    const m = document.createElement('div');
+    m.className = 'empty-msg';
+    m.textContent = text;
+    container.appendChild(m);
+  }
+}
+
+/* ---------- Save / load ---------- */
+const SAVE_KEY = 'boerderij-timo-save-v2';
+function saveGame(){
+  try{
+    const data = {
+      title: document.getElementById('farmTitle').textContent,
+      coins, fieldsUnlocked, unlockedCrops:[...unlockedCrops],
+      fieldsState: fieldsState.map(s => ({stage:s.stage, cropKey:s.cropKey})),
+      inventory, products, eggCount, equipment, animalsOwned, chickensOwned, dayCount, level, animalCapacity, chickenCapacity,
+    };
+    localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+  }catch(e){ /* opslaan niet beschikbaar in deze omgeving */ }
+}
+function loadGame(){
+  try{
+    const raw = localStorage.getItem(SAVE_KEY);
+    if(!raw) return false;
+    const d = JSON.parse(raw);
+    if(d.title) document.getElementById('farmTitle').textContent = d.title;
+    coins = d.coins ?? coins;
+    if(d.fieldsUnlocked) d.fieldsUnlocked.forEach((v,i) => fieldsUnlocked[i] = v);
+    if(d.unlockedCrops) d.unlockedCrops.forEach(k => unlockedCrops.add(k));
+    if(d.fieldsState) d.fieldsState.forEach((v,i) => {
+      if(!v) return;
+      // a field that was still growing when the game was closed has no way to know
+      // how much time is left, so treat it as finished rather than leaving it stuck
+      const stage = v.stage === 'growing' ? (v.cropKey === 'hay' ? 'hay_ready' : 'ready') : (v.stage || 'bare');
+      fieldsState[i] = { stage, cropKey:v.cropKey };
+    });
+    Object.assign(inventory, d.inventory || {});
+    Object.assign(products, d.products || {});
+    eggCount = d.eggCount || 0;
+    Object.assign(equipment, d.equipment || {});
+    if(d.dayCount) dayCount = d.dayCount;
+    if(d.level) level = d.level;
+    if(d.animalCapacity) animalCapacity = d.animalCapacity;
+    if(d.chickenCapacity) chickenCapacity = d.chickenCapacity;
+    (d.animalsOwned || []).forEach(key => { const a = ANIMALS.find(x => x.key === key); if(a){ addAnimalToPasture(a, true); animalsOwned.push(key); } });
+    (d.chickensOwned || []).forEach(() => { addChicken(true); chickensOwned.push(1); });
+    return true;
+  }catch(e){ return false; }
+}
+
+/* ---------- Title editing ---------- */
+const titleEl = document.getElementById('farmTitle');
+document.querySelector('.edit-pencil').addEventListener('click', () => { titleEl.focus(); document.execCommand('selectAll', false, null); });
+titleEl.addEventListener('blur', () => { if(titleEl.textContent.trim() === '') titleEl.textContent = 'Mijn Boerderij 🚜'; saveGame(); });
+titleEl.addEventListener('keydown', (e) => { if(e.key === 'Enter'){ e.preventDefault(); titleEl.blur(); } });
+
+/* ---------- Coins ---------- */
+function updateCoins(delta){ coins += delta; coinCountEl.textContent = coins; renderTools(); refreshFieldLockGlow(); saveGame(); }
+function refreshFieldLockGlow(){
+  [...fieldsEl.children].forEach((div, i) => {
+    if(div.classList.contains('locked')) div.classList.toggle('affordable-glow', coins >= cost(FIELD_COSTS[i]));
+  });
+}
+
+/* ---------- Fields ---------- */
+function renderFields(){
+  fieldsEl.innerHTML = '';
+  fieldsState.forEach((state, i) => {
+    const div = document.createElement('div');
+    if(!fieldsUnlocked[i]){
+      div.className = 'field locked' + (coins >= cost(FIELD_COSTS[i]) ? ' affordable-glow' : '');
+      div.innerHTML = `<span class="lock"><span class="lockicon">🔒</span><small>${coinIcon()} ${cost(FIELD_COSTS[i])}</small></span>`;
+      div.addEventListener('click', () => tryUnlockField(i));
+      fieldsEl.appendChild(div);
+      return;
+    }
+    const bounceStages = ['ready', 'hay_ready', 'hay_cut', 'hay_dried'];
+    div.className = 'field stage-' + state.stage + (bounceStages.includes(state.stage) ? ' ready' : '');
+    if(state.busy){
+      // busy fields are rendered directly by the action functions; keep a neutral placeholder here
+      div.innerHTML = '';
+    } else {
+      switch(state.stage){
+        case 'bare':       div.style.backgroundImage = `url('${SOIL_BEGIN_IMG}')`; div.style.backgroundSize = 'cover'; div.innerHTML = `<img class="field-icon-img" src="${TRACTOR_IMG}" alt="tractor" style="transform:scaleX(-1);"><span class="field-caption">Ploegen</span>`; break;
+        case 'plowed':     div.style.backgroundImage = `url('${SOIL_PLOWED_IMG}')`; div.style.backgroundSize = 'cover'; div.innerHTML = `<img class="field-icon-img" src="${COMPOST_PILE_IMG}" alt="mest"><span class="field-caption">Bemesten</span>`; break;
+        case 'fertilized': div.style.backgroundImage = `url('${SOIL_FERTILIZED_IMG}')`; div.style.backgroundSize = 'cover'; div.innerHTML = `<img class="field-icon-img" src="${SPREADER_IMG}" alt="zaaien"><span class="field-caption">Zaaien</span>`; break;
+        case 'growing':    div.innerHTML = '<span class="crop">🌱</span>'; break;
+        case 'ready': { const growImg = CROP_GROW_IMAGES[state.cropKey]; const crop = CROP_BY_KEY[state.cropKey];
+          div.innerHTML = growImg ? `<img class="field-crop-img" src="${growImg}" alt="${state.cropKey}">` : `<span class="crop">${cropIcon(state.cropKey, crop.em)}</span>`; break; }
+        case 'hay_ready':  div.innerHTML = `<img class="field-crop-img" src="${GRASS_GREEN_IMG}" alt="gras"><span class="field-caption">Maaien</span>`; break;
+        case 'hay_cut':    div.innerHTML = `<img class="field-crop-img" src="${GRASS_GOLD_IMG}" alt="gemaaid gras"><span class="field-caption">Zwadderen</span>`; break;
+        case 'hay_dried':  div.innerHTML = `<img class="field-crop-img" src="${GRASS_GOLD_IMG}" alt="droog gras"><span class="field-caption">Balen</span>`; break;
+      }
+    }
+    div.addEventListener('click', () => onFieldClick(i));
+    fieldsEl.appendChild(div);
+  });
+}
+
+function onFieldClick(i){
+  const st = fieldsState[i];
+  if(st.busy) return;
+  if(st.stage === 'bare') startPlow(i);
+  else if(st.stage === 'plowed') startFertilize(i);
+  else if(st.stage === 'fertilized'){ activeFieldIndex = i; openCropPicker(); }
+  else if(st.stage === 'ready') harvestField(i);
+  else if(st.stage === 'hay_ready') startMow(i);
+  else if(st.stage === 'hay_cut') startTed(i);
+  else if(st.stage === 'hay_dried') startBale(i);
+}
+
+function startMow(i){
+  runFieldAction(i, 'TRACTOR', 'Maaien...', 3000, soundMow, () => {
+    fieldsState[i] = { stage:'hay_cut', cropKey:'hay' };
+    renderFields();
+    saveGame();
+  });
+}
+function startTed(i){
+  runFieldAction(i, 'RAKE', 'Zwadderen...', 3000, soundTed, () => {
+    fieldsState[i] = { stage:'hay_dried', cropKey:'hay' };
+    renderFields();
+    saveGame();
+  });
+}
+function startBale(i){
+  runFieldAction(i, 'TRACTOR', 'Balen...', 3000, soundBale, () => {
+    inventory['hay'] = (inventory['hay'] || 0) + 1;
+    fieldsState[i] = { stage:'bare' };
+    renderFields();
+    renderStock();
+    saveGame();
+  });
+}
+
+function tryUnlockField(i){
+  if(coins >= cost(FIELD_COSTS[i])){
+    updateCoins(-cost(FIELD_COSTS[i]));
+    fieldsUnlocked[i] = true;
+    fieldsState[i] = { stage:'bare' };
+    soundUnlock();
+    renderFields();
+    checkLevelUp();
+  }
+}
+
+function runFieldAction(i, emoji, caption, duration, sound, onDone){
+  fieldsState[i].busy = true;
+  const fieldDiv = fieldsEl.children[i];
+  fieldDiv.innerHTML = '';
+  const cap = document.createElement('span');
+  cap.className = 'field-caption';
+  cap.textContent = caption;
+  fieldDiv.appendChild(cap);
+  const drv = document.createElement('div');
+  drv.className = 'tractor';
+  if(emoji === 'TRACTOR'){
+    drv.innerHTML = `<img class="tractor-img" src="${TRACTOR_IMG}" alt="tractor">`;
+  } else if(emoji === 'HARVESTER'){
+    drv.innerHTML = `<img class="tractor-img" src="${HARVESTER_IMG}" alt="oogstmachine">`;
+  } else if(emoji === 'MEST_TRUCK'){
+    drv.innerHTML = `<img class="tractor-img" src="${COMPOST_CART_IMG}" alt="mesttruck">`;
+  } else if(emoji === 'RAKE'){
+    drv.innerHTML = `<img class="tractor-img" src="${RAKE_IMG}" alt="hooischudder">`;
+  } else {
+    drv.textContent = emoji;
+  }
+  drv.style.animationDuration = duration + 'ms';
+  fieldDiv.appendChild(drv);
+  sound();
+  setTimeout(() => { onDone(); }, duration);
+}
+
+function startPlow(i){
+  const duration = equipment.plow ? PLOW_TIME_FAST : PLOW_TIME_BASE;
+  runFieldAction(i, 'TRACTOR', 'Ploegen...', duration, soundPlow, () => {
+    fieldsState[i] = { stage:'plowed' };
+    renderFields();
+    saveGame();
+  });
+}
+
+function startFertilize(i){
+  const duration = equipment.fertilizer ? FERTILIZE_TIME_FAST : FERTILIZE_TIME_BASE;
+  runFieldAction(i, 'MEST_TRUCK', 'Bemesten...', duration, soundFertilize, () => {
+    fieldsState[i] = { stage:'fertilized' };
+    renderFields();
+    saveGame();
+  });
+}
+
+function openCropPicker(){
+  cropChoicesEl.innerHTML = '';
+  CROPS.forEach(c => {
+    const isUnlocked = unlockedCrops.has(c.key);
+    const div = document.createElement('div');
+    if(c.tier > level){
+      div.className = 'choice locked disabled';
+      div.innerHTML = `<span class="em">${cropIcon(c.key, c.em)}</span>${c.name}<div class="price">🔒 Level ${c.tier} nodig</div>`;
+    } else if(isUnlocked){
+      const plantCost = cost(c.plantCost);
+      const canAfford = coins >= plantCost;
+      div.className = 'choice' + (canAfford ? ' affordable-glow' : ' disabled');
+      div.innerHTML = `<span class="em">${cropIcon(c.key, c.em)}</span>${c.name}<div class="price">🌱 ${coinIcon()}${plantCost}</div><div class="price sell">💰 ${coinIcon()}${c.price}</div>`;
+      div.addEventListener('click', () => {
+        if(coins >= plantCost){
+          updateCoins(-plantCost);
+          cropOverlay.classList.remove('show');
+          plantField(activeFieldIndex, c.key);
+        }
+      });
+    } else {
+      const unlockCost = cost(c.unlockCost);
+      const canAfford = coins >= unlockCost;
+      div.className = 'choice locked' + (canAfford ? ' affordable-glow' : ' disabled');
+      div.innerHTML = `<span class="em">${cropIcon(c.key, c.em)}</span>${c.name}<div class="price">🔒 ontgrendel ${coinIcon()} ${unlockCost}</div>`;
+      div.addEventListener('click', () => {
+        if(coins >= unlockCost){
+          updateCoins(-unlockCost);
+          unlockedCrops.add(c.key);
+          soundUnlock();
+          cropOverlay.classList.remove('show');
+          plantField(activeFieldIndex, c.key);
+          checkLevelUp();
+        }
+      });
+    }
+    cropChoicesEl.appendChild(div);
+  });
+  cropOverlay.classList.add('show');
+}
+document.getElementById('closeCrop').addEventListener('click', () => cropOverlay.classList.remove('show'));
+
+function plantField(i, cropKey){
+  fieldsState[i].busy = true;
+  const sowDuration = equipment.sower ? 500 : 1300;
+  runFieldAction(i, 'TRACTOR', 'Zaaien...', sowDuration, soundPlant, () => {
+    fieldsState[i] = { stage:'growing', cropKey };
+    renderFields();
+    const crop = CROP_BY_KEY[cropKey];
+    let growMs = crop.growMs;
+    if(isRaining) growMs *= 0.6;
+    if(equipment.sprinkler) growMs *= 0.85;
+    setTimeout(() => {
+      if(fieldsState[i] && fieldsState[i].stage === 'growing'){
+        const readyStage = cropKey === 'hay' ? 'hay_ready' : 'ready';
+        fieldsState[i] = { stage:readyStage, cropKey };
+        renderFields();
+      }
+    }, growMs);
+    saveGame();
+  });
+}
+
+function harvestField(i){
+  const state = fieldsState[i];
+  const crop = CROP_BY_KEY[state.cropKey];
+  const yieldCount = equipment.harvester ? 2 : 1;
+  fieldsState[i].busy = true;
+  runFieldAction(i, 'HARVESTER', 'Oogsten...', 1400, soundHarvest, () => {
+    inventory[state.cropKey] = (inventory[state.cropKey] || 0) + yieldCount;
+    fieldsState[i] = { stage:'bare' };
+    renderFields();
+    renderStock();
+    saveGame();
+
+    const fieldDiv = fieldsEl.children[i];
+    const plusOne = document.createElement('div');
+    plusOne.className = 'plusone';
+    plusOne.innerHTML = `+${yieldCount} ${harvestIcon(state.cropKey, crop.em)}`;
+    fieldDiv.appendChild(plusOne);
+    setTimeout(() => plusOne.remove(), 900);
+  });
+}
+
+/* ---------- Barns / Animals ---------- */
+[0,1].forEach(idx => { document.getElementById('barn'+idx).addEventListener('click', openAnimalPicker); });
+
+function sellOneAnimal(key){
+  const a = ANIMALS.find(x => x.key === key);
+  const sellPrice = Math.round(cost(a.price) / 2);
+  const el = pastureEl.querySelector(`.animal[data-key="${key}"]`);
+  if(el) el.remove();
+  updateCoins(sellPrice);
+  soundSell();
+  const idx = animalsOwned.indexOf(key);
+  if(idx > -1) animalsOwned.splice(idx, 1);
+  ensureEmptyMsg(pastureEl, '.animal', 'Nog geen dieren!');
+  saveGame();
+}
+
+function renderOwnedAnimals(){
+  const wrap = document.getElementById('animalOwnedList');
+  wrap.innerHTML = '';
+  const counts = {};
+  animalsOwned.forEach(k => counts[k] = (counts[k] || 0) + 1);
+  const keys = Object.keys(counts);
+  if(!keys.length) return;
+  const label = document.createElement('div');
+  label.className = 'modal-subheading';
+  label.textContent = 'Jouw dieren:';
+  wrap.appendChild(label);
+  keys.forEach(key => {
+    const a = ANIMALS.find(x => x.key === key);
+    const sellPrice = Math.round(cost(a.price) / 2);
+    const row = document.createElement('div');
+    row.className = 'sell-row';
+    row.innerHTML = `<div class="left"><span class="em">${animalIcon(key, a.em)}</span> ${a.name}: ${counts[key]}</div><button class="sell-btn">Verkoop (${coinIcon()} ${sellPrice})</button>`;
+    row.querySelector('.sell-btn').addEventListener('click', () => { sellOneAnimal(key); openAnimalPicker(); });
+    wrap.appendChild(row);
+  });
+}
+
+function openAnimalPicker(){
+  renderOwnedAnimals();
+  animalChoicesEl.innerHTML = '';
+  const currentCount = pastureEl.querySelectorAll('.animal').length;
+
+  const capLabel = document.createElement('div');
+  capLabel.className = 'modal-subheading';
+  capLabel.style.gridColumn = '1 / -1';
+  capLabel.textContent = `🐾 Wei: ${currentCount}/${animalCapacity} plekken`;
+  animalChoicesEl.appendChild(capLabel);
+
+  if(animalCapacity < ANIMAL_CAPACITY_MAX){
+    const expandCost = pastureExpansionCost();
+    const expandRow = document.createElement('div');
+    expandRow.className = 'sell-row';
+    expandRow.style.gridColumn = '1 / -1';
+    expandRow.innerHTML = `<div class="left"><span class="em">🔨</span> Wei uitbreiden (+${ANIMAL_CAPACITY_STEP})</div><button class="sell-btn expand-btn${coins >= expandCost ? ' affordable-glow' : ''}">${coinIcon()} ${expandCost}</button>`;
+    const btn = expandRow.querySelector('.expand-btn');
+    btn.addEventListener('click', () => {
+      if(coins >= expandCost){
+        updateCoins(-expandCost);
+        animalCapacity += ANIMAL_CAPACITY_STEP;
+        soundUnlock();
+        openAnimalPicker();
+        checkLevelUp();
+      }
+    });
+    animalChoicesEl.appendChild(expandRow);
+  }
+
+  if(currentCount >= animalCapacity){
+    const full = document.createElement('div');
+    full.className = 'empty-shop';
+    full.style.gridColumn = '1 / -1';
+    full.innerHTML = 'De wei is vol! 🐾<br>Verkoop eerst een dier hierboven, of breid de wei uit.';
+    animalChoicesEl.appendChild(full);
+    animalOverlay.classList.add('show');
+    return;
+  }
+  const buyLabel = document.createElement('div');
+  buyLabel.className = 'modal-subheading';
+  buyLabel.style.gridColumn = '1 / -1';
+  buyLabel.textContent = 'Nieuw dier kopen:';
+  animalChoicesEl.appendChild(buyLabel);
+  ANIMALS.forEach(a => {
+    const price = cost(a.price);
+    const canAfford = coins >= price;
+    const div = document.createElement('div');
+    div.className = 'choice' + (canAfford ? ' affordable-glow' : ' disabled');
+    div.innerHTML = `<span class="em">${animalIcon(a.key, a.em)}</span>${a.name}<div class="price">${coinIcon()} ${price}</div>`;
+    div.addEventListener('click', () => {
+      if(coins >= price){ updateCoins(-price); soundBuy(); addAnimalToPasture(a); openAnimalPicker(); checkLevelUp(); }
+    });
+    animalChoicesEl.appendChild(div);
+  });
+  animalOverlay.classList.add('show');
+}
+document.getElementById('closeAnimal').addEventListener('click', () => animalOverlay.classList.remove('show'));
+
+function addAnimalToPasture(animal, isLoad){
+  const emptyMsg = pastureEl.querySelector('.empty-msg');
+  if(emptyMsg) emptyMsg.remove();
+  const el = document.createElement('div');
+  el.className = 'animal';
+  el.innerHTML = animalIcon(animal.key, animal.em);
+  el.dataset.key = animal.key;
+  const leftPercent = 6 + Math.random() * 70;
+  el.style.left = leftPercent + '%';
+  el.style.setProperty('--w', (30 + Math.random()*50) + 'px');
+  el.style.animationDuration = (4 + Math.random()*3) + 's';
+  el.style.animationDelay = (Math.random()*2) + 's';
+  pastureEl.appendChild(el);
+  if(!isLoad){ animalsOwned.push(animal.key); saveGame(); }
+  el.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if(ANIMAL_SOUNDS[animal.key]) ANIMAL_SOUNDS[animal.key]();
+    feedAnimal(el);
+  });
+}
+
+function feedAnimal(el){
+  if((inventory['wheat'] || 0) <= 0) return;
+  inventory['wheat'] -= 1;
+  updateCoins(1);
+  soundCollect();
+  const heart = document.createElement('div');
+  heart.className = 'heart-pop';
+  heart.innerHTML = `<img src="${FEED_HEART_IMG}" alt="hartje" style="width:28px; height:auto;">`;
+  heart.style.left = el.style.left;
+  pastureEl.appendChild(heart);
+  setTimeout(() => heart.remove(), 900);
+  renderStock();
+  saveGame();
+}
+
+/* ---------- Boerderijtijd (periodic milking/shearing popup) ---------- */
+const choresOverlay = document.getElementById('choresOverlay');
+const choresListEl = document.getElementById('choresList');
+function openChoresPopup(){
+  if(document.body.classList.contains('phase-night')) return;
+  const counts = {};
+  animalsOwned.forEach(k => { if(ANIMAL_PRODUCTS[k]) counts[k] = (counts[k] || 0) + 1; });
+  const keys = Object.keys(counts);
+  if(!keys.length) return; // nothing to collect, skip the interruption entirely
+  choresListEl.innerHTML = '';
+  keys.forEach(key => {
+    const a = ANIMALS.find(x => x.key === key);
+    const productDef = ANIMAL_PRODUCTS[key];
+    const p = PRODUCT_INFO[productDef.key];
+    const actionWord = key === 'cow' ? 'Melken' : 'Scheren';
+    const row = document.createElement('div');
+    row.className = 'sell-row';
+    row.innerHTML = `<div class="left"><span class="em">${animalIcon(key, a.em)}</span> ${counts[key]}x ${a.name}</div><button class="sell-btn affordable-glow">${actionWord} (+${counts[key]} ${productIcon(productDef.key, p.em)})</button>`;
+    const btn = row.querySelector('.sell-btn');
+    btn.addEventListener('click', () => {
+      products[productDef.key] = (products[productDef.key] || 0) + counts[key];
+      if(ANIMAL_SOUNDS[key]) ANIMAL_SOUNDS[key]();
+      soundCollect();
+      renderStock();
+      saveGame();
+      btn.innerHTML = `<img class="inline-icon-img" src="${CHECK_ICON_IMG}" alt="klaar"> Gedaan!`;
+      btn.disabled = true;
+      btn.classList.remove('affordable-glow');
+    });
+    choresListEl.appendChild(row);
+  });
+  choresOverlay.classList.add('show');
+}
+function scheduleChores(){
+  const delay = 65000 + Math.random() * 30000;
+  setTimeout(() => { openChoresPopup(); scheduleChores(); }, delay);
+}
+scheduleChores();
+
+/* ---------- Kippenhok ---------- */
+function sellOneChicken(){
+  const el = chickenYardEl.querySelector('.chicken');
+  if(el) el.remove();
+  const sellPrice = Math.round(cost(CHICKEN_PRICE) / 2);
+  updateCoins(sellPrice);
+  soundSell();
+  if(chickensOwned.length) chickensOwned.pop();
+  ensureEmptyMsg(chickenYardEl, '.chicken', 'Nog geen kippen!');
+  saveGame();
+}
+
+function renderOwnedChickens(){
+  const wrap = document.getElementById('coopOwnedList');
+  wrap.innerHTML = '';
+  const count = chickenYardEl.querySelectorAll('.chicken').length;
+  if(!count) return;
+  const label = document.createElement('div');
+  label.className = 'modal-subheading';
+  label.textContent = 'Jouw kippen:';
+  wrap.appendChild(label);
+  const sellPrice = Math.round(cost(CHICKEN_PRICE) / 2);
+  const row = document.createElement('div');
+  row.className = 'sell-row';
+  row.innerHTML = `<div class="left"><span class="em"><img class="inline-icon-img" src="${CHICKEN_IMG}" alt="kip"></span> Kip: ${count}</div><button class="sell-btn">Verkoop (${coinIcon()} ${sellPrice})</button>`;
+  row.querySelector('.sell-btn').addEventListener('click', () => { sellOneChicken(); openCoopPicker(); });
+  wrap.appendChild(row);
+}
+
+function openCoopPicker(){
+  renderOwnedChickens();
+  coopChoicesEl.innerHTML = '';
+  const currentCount = chickenYardEl.querySelectorAll('.chicken').length;
+
+  const capLabel = document.createElement('div');
+  capLabel.className = 'modal-subheading';
+  capLabel.style.gridColumn = '1 / -1';
+  capLabel.textContent = `🐔 Ren: ${currentCount}/${chickenCapacity} plekken`;
+  coopChoicesEl.appendChild(capLabel);
+
+  if(chickenCapacity < CHICKEN_CAPACITY_MAX){
+    const expandCost = coopExpansionCost();
+    const expandRow = document.createElement('div');
+    expandRow.className = 'sell-row';
+    expandRow.style.gridColumn = '1 / -1';
+    expandRow.innerHTML = `<div class="left"><span class="em">🔨</span> Ren uitbreiden (+${CHICKEN_CAPACITY_STEP})</div><button class="sell-btn expand-btn${coins >= expandCost ? ' affordable-glow' : ''}">${coinIcon()} ${expandCost}</button>`;
+    const btn = expandRow.querySelector('.expand-btn');
+    btn.addEventListener('click', () => {
+      if(coins >= expandCost){
+        updateCoins(-expandCost);
+        chickenCapacity += CHICKEN_CAPACITY_STEP;
+        soundUnlock();
+        openCoopPicker();
+        checkLevelUp();
+      }
+    });
+    coopChoicesEl.appendChild(expandRow);
+  }
+
+  if(currentCount >= chickenCapacity){
+    const full = document.createElement('div');
+    full.className = 'empty-shop';
+    full.style.gridColumn = '1 / -1';
+    full.innerHTML = 'Het ren is vol! 🐔<br>Verkoop eerst een kip hierboven, of breid het ren uit.';
+    coopChoicesEl.appendChild(full);
+    coopOverlay.classList.add('show');
+    return;
+  }
+  const buyLabel = document.createElement('div');
+  buyLabel.className = 'modal-subheading';
+  buyLabel.style.gridColumn = '1 / -1';
+  buyLabel.textContent = 'Nieuwe kip kopen:';
+  coopChoicesEl.appendChild(buyLabel);
+  const div = document.createElement('div');
+  const chickenPrice = cost(CHICKEN_PRICE);
+  div.className = 'choice' + (coins >= chickenPrice ? ' affordable-glow' : ' disabled');
+  div.innerHTML = `<span class="em"><img class="inline-icon-img" src="${CHICKEN_IMG}" alt="kip"></span>Kip<div class="price">${coinIcon()} ${chickenPrice}</div>`;
+  div.addEventListener('click', () => {
+    if(coins >= chickenPrice){ updateCoins(-chickenPrice); soundBuy(); addChicken(); openCoopPicker(); checkLevelUp(); }
+  });
+  coopChoicesEl.appendChild(div);
+  coopOverlay.classList.add('show');
+}
+document.getElementById('coopBtn').addEventListener('click', openCoopPicker);
+document.getElementById('closeCoop').addEventListener('click', () => coopOverlay.classList.remove('show'));
+
+function addChicken(isLoad){
+  const emptyMsg = chickenYardEl.querySelector('.empty-msg');
+  if(emptyMsg) emptyMsg.remove();
+  const el = document.createElement('div');
+  el.className = 'chicken';
+  el.innerHTML = `<img class="inline-icon-img" src="${CHICKEN_IMG}" alt="kip" style="width:42px; transform:scaleX(-1);">`;
+  const left = 6 + Math.random() * 74;
+  el.style.left = left + '%';
+  el.style.setProperty('--w', (20 + Math.random()*30) + 'px');
+  el.style.animationDuration = (5 + Math.random()*3) + 's';
+  el.style.animationDelay = (Math.random()*2) + 's';
+  chickenYardEl.appendChild(el);
+  if(!isLoad){ chickensOwned.push(1); saveGame(); }
+  el.addEventListener('click', (e) => { e.stopPropagation(); soundChicken(); });
+  scheduleEgg(el, left);
+}
+
+function scheduleEgg(chickenEl, leftPercent){
+  const delay = 10000 + Math.random() * 9000;
+  setTimeout(() => {
+    if(!chickenEl.isConnected) return;
+    if(document.body.classList.contains('phase-night')){ scheduleEgg(chickenEl, leftPercent); return; }
+    const egg = document.createElement('div');
+    egg.className = 'product';
+    egg.innerHTML = `<img src="${EGG_IMG}" alt="ei" style="width:30px; height:auto; display:block;">`;
+    egg.style.left = (5 + Math.random() * 84) + '%';
+    egg.style.bottom = (6 + Math.random() * 30) + 'px';
+    egg.addEventListener('click', () => { eggCount += 1; soundCollect(); egg.remove(); renderStock(); saveGame(); });
+    chickenYardEl.appendChild(egg);
+    scheduleEgg(chickenEl, leftPercent);
+  }, delay);
+}
+
+/* ---------- Gereedschapsschuur ---------- */
+function renderTools(){
+  toolsEl.innerHTML = '';
+  TOOLS.forEach(t => {
+    const owned = equipment[t.key];
+    const price = cost(t.price);
+    const canAfford = coins >= price;
+    const div = document.createElement('div');
+    div.className = 'tool-card' + (owned ? ' owned' : (canAfford ? ' affordable-glow' : ' disabled'));
+    const TOOL_IMAGES = { plow: TRACTOR_IMG, harvester: HARVESTER_IMG, sprinkler: SPRINKLER_IMG };
+    const iconHtml = t.key === 'plow'
+      ? `<img class="tool-icon-img" src="${TRACTOR_IMG}" alt="tractor" style="transform:scaleX(-1);">`
+      : TOOL_IMAGES[t.key]
+        ? `<img class="tool-icon-img" src="${TOOL_IMAGES[t.key]}" alt="${t.key}">`
+        : `<span class="em">${t.em}</span>`;
+    div.innerHTML = `${iconHtml}${t.name}<div class="price">${owned ? `Gekocht <img class="inline-icon-img" src="${CHECK_ICON_IMG}" alt="gekocht">` : coinIcon() + ' ' + price}</div><div class="desc">${t.desc}</div>`;
+    if(!owned){
+      div.addEventListener('click', () => {
+        if(coins >= price){ updateCoins(-price); equipment[t.key] = true; soundUnlock(); renderTools(); checkLevelUp(); }
+      });
+    }
+    toolsEl.appendChild(div);
+  });
+}
+
+const stockTableEl = document.getElementById('stockTable');
+function renderStock(){
+  stockTableEl.innerHTML = '';
+  const rows = [];
+  CROPS.forEach(c => { if(inventory[c.key] > 0) rows.push({key:c.key, em:c.em, name:c.name, count:inventory[c.key]}); });
+  Object.keys(PRODUCT_INFO).forEach(key => { if(products[key] > 0){ const p = PRODUCT_INFO[key]; rows.push({key:key, em:p.em, name:p.name, count:products[key]}); } });
+  if(eggCount > 0) rows.push({key:'egg', em:'🥚', name:'Eieren', count:eggCount});
+  if(!rows.length){ stockTableEl.innerHTML = '<div class="stock-empty">Nog niks geoogst of verzameld.</div>'; return; }
+  rows.forEach(r => {
+    const row = document.createElement('div');
+    row.className = 'stock-row';
+    row.innerHTML = `<span><span class="em">${harvestIcon(r.key, r.em)}</span>${r.name}</span><span>${r.count}</span>`;
+    stockTableEl.appendChild(row);
+  });
+}
+
+/* ---------- Shop ---------- */
+document.getElementById('shopBtn').addEventListener('click', () => { renderShop(); shopOverlay.classList.add('show'); });
+document.getElementById('closeShop').addEventListener('click', () => shopOverlay.classList.remove('show'));
+document.getElementById('closeChores').addEventListener('click', () => choresOverlay.classList.remove('show'));
+
+function renderShop(){
+  shopListEl.innerHTML = '';
+  const items = [];
+  CROPS.forEach(c => {
+    if(inventory[c.key] > 0){
+      const price = c.price + (equipment.fertilizer ? 1 : 0);
+      items.push({key:c.key, em:c.em, name:c.name, count:inventory[c.key], price, sell:() => { inventory[c.key]--; updateCoins(price); soundSell(); renderShop(); renderStock(); }});
+    }
+  });
+  Object.keys(PRODUCT_INFO).forEach(key => {
+    if(products[key] > 0){
+      const p = PRODUCT_INFO[key];
+      items.push({key:key, em:p.em, name:p.name, count:products[key], price:p.price, sell:() => { products[key]--; updateCoins(p.price); soundSell(); renderShop(); renderStock(); }});
+    }
+  });
+  if(eggCount > 0) items.push({key:'egg', em:'🥚', name:'Eieren', count:eggCount, price:EGG_PRICE, sell:() => { eggCount--; updateCoins(EGG_PRICE); soundSell(); renderShop(); renderStock(); }});
+
+  if(items.length === 0){
+    shopListEl.innerHTML = '<div class="empty-shop">Je hebt nog niks te verkopen.<br>Ga oogsten of dieren verzorgen! 🌽🥚</div>';
+    return;
+  }
+  items.forEach(item => {
+    const row = document.createElement('div');
+    row.className = 'sell-row';
+    row.innerHTML = `<div class="left"><span class="em">${harvestIcon(item.key, item.em)}</span> ${item.name}: ${item.count}</div><button class="sell-btn">Verkoop (${coinIcon()} ${item.price})</button>`;
+    row.querySelector('.sell-btn').addEventListener('click', item.sell);
+    shopListEl.appendChild(row);
+  });
+}
+
+/* ---------- Clouds ---------- */
+function makeClouds(){
+  const positions = [ [8,'8%','30px'], [55,'40%','44px'], [80,'12%','26px'] ];
+  positions.forEach(([top, left, size]) => {
+    const c = document.createElement('div');
+    c.className = 'cloud';
+    c.style.top = top + 'px';
+    c.style.left = left;
+    c.style.width = (parseInt(size)*2.6) + 'px';
+    c.style.height = size;
+    c.style.background = `url('${CLOUD_IMG}') 0 0/100% 100% no-repeat`;
+    document.getElementById('app').appendChild(c);
+  });
+}
+makeClouds();
+
+/* ---------- Pet ---------- */
+function makePet(){
+  const yard = document.getElementById('yard');
+  const dog = document.createElement('div');
+  dog.className = 'pet';
+  dog.textContent = '🐕';
+  dog.style.left = '10%';
+  dog.style.setProperty('--w', '55%');
+  dog.style.animationDuration = '7s';
+  yard.appendChild(dog);
+}
+makePet();
+
+/* ---------- Modal close buttons ---------- */
+document.querySelectorAll('.overlay .modal').forEach(modal => {
+  const x = document.createElement('button');
+  x.className = 'modal-close-x';
+  x.innerHTML = `<img src="${CLOSE_X_IMG}" alt="Sluiten" style="width:100%; height:100%; display:block;">`;
+  x.setAttribute('aria-label', 'Sluiten');
+  x.addEventListener('click', () => modal.closest('.overlay').classList.remove('show'));
+  modal.appendChild(x);
+});
+
+/* ---------- Reset ---------- */
+document.getElementById('resetBtn').addEventListener('click', () => {
+  askSell(
+    '🔄 Opnieuw beginnen? Alles wat je hebt opgebouwd gaat dan verloren!',
+    () => { try{ localStorage.removeItem(SAVE_KEY); }catch(e){} location.reload(); },
+    'Ja, opnieuw'
+  );
+});
+
+/* ---------- Static icon swaps ---------- */
+document.getElementById('shopBtn').innerHTML = `<img class="inline-icon-img" src="${CART_ICON_IMG}" alt="winkel"> Naar de boerderijwinkel`;
+document.querySelector('#shopOverlay h2').innerHTML = `<img class="inline-icon-img" src="${CART_ICON_IMG}" alt="winkel"> Winkel`;
+document.getElementById('resetBtn').innerHTML = `<img class="inline-icon-img" src="${BACK_ARROW_IMG}" alt="reset"> Spel opnieuw beginnen`;
+document.querySelector('.hills').style.backgroundImage = `url('${HILLS_IMG}')`;
+document.getElementById('treeDeco').style.backgroundImage = `url('${TREE_IMG}')`;
+document.getElementById('farmhouseDeco').style.backgroundImage = `url('${FARMHOUSE_IMG}')`;
+document.querySelector('.moon').style.backgroundImage = `url('${MOON_IMG}')`;
+document.querySelector('.sun').style.background = `url('${SUN_IMG}') center/100% 100% no-repeat`;
+document.querySelector('#cropOverlay h2').innerHTML = `Wat wil je zaaien? <img class="inline-icon-img" src="${SEEDS_MIX_IMG}" alt="zaaien">`;
+document.getElementById('wheelbarrowIcon').src = WHEELBARROW_IMG;
+document.getElementById('progressFrame').style.backgroundImage = `url('${PROGRESS_FRAME_IMG}')`;
+document.querySelectorAll('.barn').forEach(el => { el.style.backgroundImage = `url('${BARN_BLDG_IMG}')`; });
+document.querySelector('.coop').style.backgroundImage = `url('${COOP_BLDG_IMG}')`;
+document.querySelector('.shed').style.backgroundImage = `url('${TOOLSHED_BLDG_IMG}')`;
+(() => {
+  const shopModal = document.querySelector('#shopOverlay .modal');
+  shopModal.style.backgroundImage = `url('${SHOP_FRAME_IMG}')`;
+  shopModal.style.backgroundSize = '100% 100%';
+  shopModal.style.backgroundRepeat = 'no-repeat';
+  shopModal.style.border = 'none';
+  shopModal.style.paddingTop = '54px';
+  const choresModal = document.querySelector('#choresOverlay .modal');
+  choresModal.style.backgroundImage = `url('${CHORES_FRAME_IMG}')`;
+  choresModal.style.backgroundSize = '100% 100%';
+  choresModal.style.backgroundRepeat = 'no-repeat';
+  choresModal.style.border = 'none';
+  choresModal.style.paddingTop = '54px';
+})();
+
+/* ---------- Init ---------- */
+const restored = loadGame();
+coinCountEl.textContent = coins;
+renderFields();
+renderTools();
+renderStock();
+updateLevelUI();
+</script>
+</body>
+</html>
