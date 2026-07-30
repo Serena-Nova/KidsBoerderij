@@ -35,8 +35,8 @@
   body.phase-dawn .hero{   background:linear-gradient(#c3d4f0, #ffe3c2); }
 
   #app{ max-width:900px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column; position:relative; }
-  .hills{ position:absolute; left:0; right:0; bottom:-10px; height:220px; background-size:cover;
-    background-position:bottom; background-repeat:no-repeat; z-index:1; filter:brightness(1) saturate(1); transition:filter 4s ease; }
+  .hills{ position:absolute; left:0; right:0; bottom:-10px; height:220px; background-size:auto 100%;
+    background-position:bottom left; background-repeat:repeat-x; z-index:1; filter:brightness(1) saturate(1); transition:filter 4s ease; }
   body.phase-day .hills{    filter:brightness(1) saturate(1); }
   body.phase-sunset .hills{ filter:brightness(0.85) saturate(1.1); }
   body.phase-night .hills{  filter:brightness(0.4) saturate(0.75) hue-rotate(-8deg); }
@@ -119,18 +119,30 @@
     text-shadow:0 2px 2px #0006; animation:floatup 0.9s forwards; pointer-events:none; }
   .heart-pop{ position:absolute; bottom:52px; font-size:1.3rem; pointer-events:none; z-index:6;
     animation:floatup 0.9s forwards; }
+  .heart-fly{ position:fixed; pointer-events:none; z-index:9999; animation:heartFly 2.2s ease-out forwards; }
+  @keyframes heartFly{
+    0%{ opacity:1; transform:translate(-50%,0) scale(1) rotate(0deg); }
+    15%{ transform:translate(-50%,-40px) scale(1.15) rotate(-6deg); }
+    100%{ opacity:0; transform:translate(-50%,-100vh) scale(1.3) rotate(6deg); }
+  }
   @keyframes floatup{ 0%{opacity:1; transform:translateY(0);} 100%{opacity:0; transform:translateY(-40px);} }
-  .tractor{ position:absolute; top:42%; left:-15%; transform:translateY(-50%); font-size:2.5rem;
-    z-index:20; animation:drive linear forwards; filter:drop-shadow(0 3px 2px #0004); }
+  .tractor{ position:absolute; top:42%; left:0; --field-width:300px; transform:translateY(-50%) translateX(calc(var(--field-width) * -0.15)); font-size:2.5rem;
+    z-index:20; animation:driveX linear forwards; filter:drop-shadow(0 3px 2px #0004); }
   .tractor-img{ width:66px; height:auto; display:block; transform:scaleX(-1); }
   .harvester-img{ width:100px; }
   .compost-img{ width:92px; transform:none; }
   .field-icon-img{ width:66px; height:auto; vertical-align:middle; filter:drop-shadow(0 2px 2px #0004); }
   .field-crop-img{ position:absolute; inset:0; width:100%; height:100%; object-fit:contain; }
   .field-crop-img.field-crop-cover{ object-fit:cover; transform:scale(1.35); }
+  @media (min-width: 600px){
+    .field-crop-img.field-crop-cover{ transform:scale(1.05); }
+  }
   .tool-icon-img{ width:52px; height:auto; display:block; margin:0 auto -6px; }
   .inline-icon-img{ width:1.35em; height:auto; vertical-align:middle; display:inline-block; }
-  @keyframes drive{ 0%{ left:-15%; } 100%{ left:115%; } }
+  @keyframes driveX{
+    0%{ transform:translateY(-50%) translateX(calc(var(--field-width) * -0.15)); }
+    100%{ transform:translateY(-50%) translateX(calc(var(--field-width) * 1.15)); }
+  }
 
   .farmyard-wrap{ padding:10px 16px; position:relative; z-index:2;}
   .farmyard{ display:flex; gap:10px; align-items:flex-end; margin-top:4px; }
@@ -220,6 +232,9 @@
   .overlay.show{ display:flex; }
   .modal{ background:var(--cream); border-radius:24px; border:5px solid #f0c34d; padding:0; position:relative;
     max-width:420px; width:100%; box-shadow:0 10px 0 var(--shadow); }
+  @media (min-width: 600px){
+    .modal{ max-width:560px; }
+  }
   .modal.modal-shop{ border-color:#5b8aa6; }
   .modal-scroll{ padding:20px; max-height:80vh; overflow-y:auto; border-radius:19px; }
   .modal-close-x{ position:absolute; top:-16px; right:-16px; width:38px; height:38px; border-radius:50%;
@@ -502,7 +517,7 @@ const CROP_GROW_IMAGES = {
   potato:POTATO_GROW_IMG, strawberry:STRAWBERRY_GROW_IMG, eggplant:EGGPLANT_GROW_IMG,
   cucumber:CUCUMBER_GROW_IMG, tomato:TOMATO_GROW_IMG, broccoli:BROCCOLI_GROW_IMG,
   grass:GRASS_GREEN_IMG,
-  leek:SPROUT_IMG,
+  leek:LEEK_HARVEST_IMG,
 };
 
 const CROP_IMAGES = {
@@ -828,7 +843,7 @@ titleEl.addEventListener('keydown', (e) => { if(e.key === 'Enter'){ e.preventDef
 function updateCoins(delta){ coins += delta; coinCountEl.textContent = coins; renderTools(); refreshFieldLockGlow(); saveGame(); }
 function refreshFieldLockGlow(){
   [...fieldsEl.children].forEach((div, i) => {
-    if(div.classList.contains('locked')) div.classList.toggle('affordable-glow', coins >= cost(FIELD_COSTS[i]));
+    if(div.classList.contains('locked')) div.classList.toggle('affordable-glow', coins >= FIELD_COSTS[i]);
   });
 }
 
@@ -875,7 +890,7 @@ function renderFields(){
 
     const locked = !fieldsUnlocked[i];
     field.className = 'field' + (locked
-      ? ' locked' + (coins >= cost(FIELD_COSTS[i]) ? ' affordable-glow' : '')
+      ? ' locked' + (coins >= FIELD_COSTS[i] ? ' affordable-glow' : '')
       : ' stage-' + state.stage + (bounceStages.includes(state.stage) ? ' ready' : ''));
     field.onclick = locked ? (() => tryUnlockField(i)) : (() => onFieldClick(i));
 
@@ -899,14 +914,14 @@ function renderFields(){
 
     // --- content layer: the icon / caption / crop art / lock on top of the soil ---
     const contentSig = locked
-      ? 'locked:' + (coins >= cost(FIELD_COSTS[i]) ? '1' : '0')
+      ? 'locked:' + (coins >= FIELD_COSTS[i] ? '1' : '0')
       : (state.busy ? 'busy' : state.stage + ':' + (state.cropKey || ''));
     if(field.dataset.contentSig === contentSig) return;
     field.dataset.contentSig = contentSig;
 
     let html = '', waitUrl = null;
     if(locked){
-      html = `<span class="lock"><span class="lockicon">🔒</span><small>${coinIcon()} ${cost(FIELD_COSTS[i])}</small></span>`;
+      html = `<span class="lock"><span class="lockicon">🔒</span><small>${coinIcon()} ${FIELD_COSTS[i]}</small></span>`;
     } else if(state.busy){
       html = ''; // the tractor overlay is added directly by runFieldAction
     } else {
@@ -962,6 +977,7 @@ function startMow(i){
   const duration = 3000;
   const fieldDiv = fieldsEl.children[i];
   fieldsState[i].busy = true;
+  fieldDiv.dataset.contentSig = 'busy';
   fieldDiv.querySelectorAll('.field-busy').forEach(el => el.remove());
   fieldDiv.querySelectorAll('.field-content .field-caption').forEach(el => el.remove());
 
@@ -974,6 +990,7 @@ function startMow(i){
   const drv = document.createElement('div');
   drv.className = 'tractor';
   drv.innerHTML = `<img class="tractor-img" src="${TRACTOR_IMG}" alt="tractor">`;
+  drv.style.setProperty('--field-width', fieldDiv.getBoundingClientRect().width + 'px');
   drv.style.animationDuration = duration + 'ms';
   overlay.appendChild(drv);
   fieldDiv.appendChild(overlay);
@@ -989,6 +1006,7 @@ function startTed(i){
   const duration = 3000;
   const fieldDiv = fieldsEl.children[i];
   fieldsState[i].busy = true;
+  fieldDiv.dataset.contentSig = 'busy';
   fieldDiv.querySelectorAll('.field-busy, .field-ted-gold').forEach(el => el.remove());
   fieldDiv.querySelectorAll('.field-content .field-caption').forEach(el => el.remove());
 
@@ -1012,6 +1030,7 @@ function startTed(i){
   const drv = document.createElement('div');
   drv.className = 'tractor';
   drv.innerHTML = `<img class="tractor-img" src="${RAKE_IMG}" alt="hooischudder">`;
+  drv.style.setProperty('--field-width', fieldDiv.getBoundingClientRect().width + 'px');
   drv.style.animationDuration = duration + 'ms';
   overlay.appendChild(drv);
   fieldDiv.appendChild(overlay);
@@ -1034,6 +1053,7 @@ function startBale(i){
   const duration = 3000;
   const fieldDiv = fieldsEl.children[i];
   fieldsState[i].busy = true;
+  fieldDiv.dataset.contentSig = 'busy';
   fieldDiv.querySelectorAll('.field-busy').forEach(el => el.remove());
   fieldDiv.querySelectorAll('.field-content .field-caption').forEach(el => el.remove());
 
@@ -1046,6 +1066,7 @@ function startBale(i){
   const drv = document.createElement('div');
   drv.className = 'tractor';
   drv.innerHTML = `<img class="tractor-img" src="${TRACTOR_IMG}" alt="tractor">`;
+  drv.style.setProperty('--field-width', fieldDiv.getBoundingClientRect().width + 'px');
   drv.style.animationDuration = duration + 'ms';
   overlay.appendChild(drv);
   fieldDiv.appendChild(overlay);
@@ -1077,8 +1098,8 @@ function collectHayBale(i){
 }
 
 function tryUnlockField(i){
-  if(coins >= cost(FIELD_COSTS[i])){
-    updateCoins(-cost(FIELD_COSTS[i]));
+  if(coins >= FIELD_COSTS[i]){
+    updateCoins(-FIELD_COSTS[i]);
     fieldsUnlocked[i] = true;
     fieldsState[i] = { stage:'bare' };
     soundUnlock();
@@ -1090,6 +1111,7 @@ function tryUnlockField(i){
 function runFieldAction(i, emoji, caption, duration, sound, onDone){
   fieldsState[i].busy = true;
   const fieldDiv = fieldsEl.children[i];
+  fieldDiv.dataset.contentSig = 'busy';
   fieldDiv.querySelectorAll('.field-content, .field-busy').forEach(el => el.remove());
   const overlay = document.createElement('div');
   overlay.className = 'field-busy';
@@ -1110,6 +1132,7 @@ function runFieldAction(i, emoji, caption, duration, sound, onDone){
   } else {
     drv.textContent = emoji;
   }
+  drv.style.setProperty('--field-width', fieldDiv.getBoundingClientRect().width + 'px');
   drv.style.animationDuration = duration + 'ms';
   overlay.appendChild(drv);
   fieldDiv.appendChild(overlay);
@@ -1144,7 +1167,7 @@ function openCropPicker(){
       div.className = 'choice locked disabled';
       div.innerHTML = `<span class="em">${cropIcon(c.key, c.em)}</span>${c.name}<div class="price">🔒 Level ${c.tier} nodig</div>`;
     } else if(isUnlocked){
-      const plantCost = cost(c.plantCost);
+      const plantCost = c.plantCost;
       const canAfford = coins >= plantCost;
       div.className = 'choice' + (canAfford ? ' affordable-glow' : ' disabled');
       div.innerHTML = `<span class="em">${cropIcon(c.key, c.em)}</span>${c.name}<div class="price">🌱 ${coinIcon()}${plantCost}</div><div class="price sell">💰 ${coinIcon()}${c.price}</div>`;
@@ -1343,17 +1366,23 @@ function addAnimalToPasture(animal, isLoad){
   });
 }
 
+function spawnFlyingHeart(el){
+  const rect = el.getBoundingClientRect();
+  const heart = document.createElement('div');
+  heart.className = 'heart-fly';
+  heart.innerHTML = `<img src="${FEED_HEART_IMG}" alt="hartje" style="width:32px; height:auto;">`;
+  heart.style.left = (rect.left + rect.width / 2) + 'px';
+  heart.style.top = rect.top + 'px';
+  document.body.appendChild(heart);
+  setTimeout(() => heart.remove(), 2200);
+}
+
 function feedAnimal(el){
   if((inventory['farmFeed'] || 0) <= 0) return;
   inventory['farmFeed'] -= 1;
   updateCoins(1);
   soundCollect();
-  const heart = document.createElement('div');
-  heart.className = 'heart-pop';
-  heart.innerHTML = `<img src="${FEED_HEART_IMG}" alt="hartje" style="width:28px; height:auto;">`;
-  heart.style.left = el.style.left;
-  pastureEl.appendChild(heart);
-  setTimeout(() => heart.remove(), 900);
+  spawnFlyingHeart(el);
   renderStock();
   saveGame();
 }
@@ -1363,12 +1392,7 @@ function feedChicken(el){
   inventory['chickenTreats'] -= 1;
   updateCoins(1);
   soundCollect();
-  const heart = document.createElement('div');
-  heart.className = 'heart-pop';
-  heart.innerHTML = `<img src="${FEED_HEART_IMG}" alt="hartje" style="width:28px; height:auto;">`;
-  heart.style.left = el.style.left;
-  chickenYardEl.appendChild(heart);
-  setTimeout(() => heart.remove(), 900);
+  spawnFlyingHeart(el);
   renderStock();
   saveGame();
 }
@@ -1401,13 +1425,17 @@ function openChoresPopup(){
       btn.innerHTML = `<img class="inline-icon-img" src="${CHECK_ICON_IMG}" alt="klaar"> Gedaan!`;
       btn.disabled = true;
       btn.classList.remove('affordable-glow');
+      const remaining = choresListEl.querySelectorAll('.sell-btn:not(:disabled)').length;
+      if(remaining === 0){
+        setTimeout(() => closeOverlay(choresOverlay), 700);
+      }
     });
     choresListEl.appendChild(row);
   });
   openOverlay(choresOverlay);
 }
 function scheduleChores(){
-  const delay = 65000 + Math.random() * 30000;
+  const delay = 180000 + Math.random() * 90000;
   setTimeout(() => { openChoresPopup(); scheduleChores(); }, delay);
 }
 scheduleChores();
@@ -1516,7 +1544,7 @@ function addChicken(isLoad){
 }
 
 function scheduleEgg(chickenEl, leftPercent){
-  const delay = 30000 + Math.random() * 18000;
+  const delay = 55000 + Math.random() * 25000;
   setTimeout(() => {
     if(!chickenEl.isConnected) return;
     if(document.body.classList.contains('phase-night')){ scheduleEgg(chickenEl, leftPercent); return; }
@@ -1622,6 +1650,9 @@ function renderShop(){
 
   if(items.length === 0){
     shopListEl.innerHTML = '<div class="empty-shop">Je hebt nog niks te verkopen.<br>Ga oogsten of dieren verzorgen! 🌽🥚</div>';
+    if(shopOverlay.classList.contains('show')){
+      setTimeout(() => closeOverlay(shopOverlay), 700);
+    }
     return;
   }
   items.forEach(item => {
