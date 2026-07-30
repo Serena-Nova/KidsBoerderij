@@ -36,7 +36,7 @@
 
   #app{ max-width:900px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column; position:relative; }
   .hills{ position:absolute; left:0; right:0; bottom:-10px; height:220px; background-size:auto 100%;
-    background-position:bottom left; background-repeat:repeat-x; z-index:1; filter:brightness(1) saturate(1); transition:filter 4s ease; }
+    background-position:bottom center; background-repeat:no-repeat; z-index:1; filter:brightness(1) saturate(1); transition:filter 4s ease; }
   body.phase-day .hills{    filter:brightness(1) saturate(1); }
   body.phase-sunset .hills{ filter:brightness(0.85) saturate(1.1); }
   body.phase-night .hills{  filter:brightness(0.4) saturate(0.75) hue-rotate(-8deg); }
@@ -233,7 +233,12 @@
   .modal{ background:var(--cream); border-radius:24px; border:5px solid #f0c34d; padding:0; position:relative;
     max-width:420px; width:100%; box-shadow:0 10px 0 var(--shadow); }
   @media (min-width: 600px){
-    .modal{ max-width:560px; }
+    .modal{ max-width:min(85vw, 720px); }
+    .modal h2{ font-size:1.7rem; }
+    .modal-scroll{ padding:28px; }
+    .shop-sell-row .left{ font-size:1.15rem; }
+    .shop-sell-btn{ font-size:1.05rem; padding:12px 16px; }
+    .sell-row .left, .sell-btn{ font-size:1.1rem; }
   }
   .modal.modal-shop{ border-color:#5b8aa6; }
   .modal-scroll{ padding:20px; max-height:80vh; overflow-y:auto; border-radius:19px; }
@@ -1345,6 +1350,42 @@ function openAnimalPicker(){
 }
 document.getElementById('closeAnimal').addEventListener('click', () => closeOverlay(animalOverlay));
 
+function layoutPastureAnimals(){
+  const els = Array.from(pastureEl.querySelectorAll('.animal'));
+  const n = els.length;
+  if(!n) return;
+  const pastureWidth = pastureEl.clientWidth || 300;
+  const slotWidth = pastureWidth / n;
+  els.forEach((el, i) => {
+    const jitter = (Math.random() - 0.5) * slotWidth * 0.3;
+    const baseLeftPx = slotWidth * i + slotWidth / 2 + jitter;
+    const leftPercent = Math.max(4, Math.min(94, (baseLeftPx / pastureWidth) * 100));
+    el.style.left = leftPercent + '%';
+    const wanderPx = Math.max(24, Math.min(slotWidth * 0.4, pastureWidth * 0.14));
+    el.style.setProperty('--w', wanderPx + 'px');
+  });
+}
+function layoutChickenYard(){
+  const els = Array.from(chickenYardEl.querySelectorAll('.chicken'));
+  const n = els.length;
+  if(!n) return;
+  const yardWidth = chickenYardEl.clientWidth || 300;
+  const slotWidth = yardWidth / n;
+  els.forEach((el, i) => {
+    const jitter = (Math.random() - 0.5) * slotWidth * 0.3;
+    const baseLeftPx = slotWidth * i + slotWidth / 2 + jitter;
+    const leftPercent = Math.max(4, Math.min(94, (baseLeftPx / yardWidth) * 100));
+    el.style.left = leftPercent + '%';
+    const wanderPx = Math.max(20, Math.min(slotWidth * 0.4, yardWidth * 0.12));
+    el.style.setProperty('--w', wanderPx + 'px');
+  });
+}
+let layoutResizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(layoutResizeTimer);
+  layoutResizeTimer = setTimeout(() => { layoutPastureAnimals(); layoutChickenYard(); }, 200);
+});
+
 function addAnimalToPasture(animal, isLoad){
   const emptyMsg = pastureEl.querySelector('.empty-msg');
   if(emptyMsg) emptyMsg.remove();
@@ -1352,12 +1393,10 @@ function addAnimalToPasture(animal, isLoad){
   el.className = 'animal';
   el.innerHTML = animalIcon(animal.key, animal.em);
   el.dataset.key = animal.key;
-  const leftPercent = 6 + Math.random() * 46;
-  el.style.left = leftPercent + '%';
-  el.style.setProperty('--w', (20 + Math.random()*30) + 'px');
   el.style.animationDuration = (4 + Math.random()*3) + 's';
   el.style.animationDelay = (Math.random()*2) + 's';
   pastureEl.appendChild(el);
+  layoutPastureAnimals();
   if(!isLoad){ animalsOwned.push(animal.key); saveGame(); }
   el.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -1532,15 +1571,13 @@ function addChicken(isLoad){
   const el = document.createElement('div');
   el.className = 'chicken';
   el.innerHTML = `<img class="inline-icon-img" src="${CHICKEN_IMG}" alt="kip" style="width:42px; transform:scaleX(-1);">`;
-  const left = 6 + Math.random() * 46;
-  el.style.left = left + '%';
-  el.style.setProperty('--w', (15 + Math.random()*20) + 'px');
   el.style.animationDuration = (5 + Math.random()*3) + 's';
   el.style.animationDelay = (Math.random()*2) + 's';
   chickenYardEl.appendChild(el);
+  layoutChickenYard();
   if(!isLoad){ chickensOwned.push(1); saveGame(); }
   el.addEventListener('click', (e) => { e.stopPropagation(); soundChicken(); feedChicken(el); });
-  scheduleEgg(el, left);
+  scheduleEgg(el, 0);
 }
 
 function scheduleEgg(chickenEl, leftPercent){
