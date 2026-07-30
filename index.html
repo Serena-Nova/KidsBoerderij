@@ -959,11 +959,31 @@ function onFieldClick(i){
 }
 
 function startMow(i){
-  runFieldAction(i, 'TRACTOR', 'Maaien...', 3000, soundMow, () => {
+  const duration = 3000;
+  const fieldDiv = fieldsEl.children[i];
+  fieldsState[i].busy = true;
+  fieldDiv.querySelectorAll('.field-busy').forEach(el => el.remove());
+  fieldDiv.querySelectorAll('.field-content .field-caption').forEach(el => el.remove());
+
+  const overlay = document.createElement('div');
+  overlay.className = 'field-busy';
+  const cap = document.createElement('span');
+  cap.className = 'field-caption';
+  cap.textContent = 'Maaien...';
+  overlay.appendChild(cap);
+  const drv = document.createElement('div');
+  drv.className = 'tractor';
+  drv.innerHTML = `<img class="tractor-img" src="${TRACTOR_IMG}" alt="tractor">`;
+  drv.style.animationDuration = duration + 'ms';
+  overlay.appendChild(drv);
+  fieldDiv.appendChild(overlay);
+  soundMow();
+
+  setTimeout(() => {
     fieldsState[i] = { stage:'hay_cut', cropKey:'hay' };
     renderFields();
     saveGame();
-  });
+  }, duration);
 }
 function startTed(i){
   const duration = 3000;
@@ -1011,11 +1031,32 @@ function startTed(i){
   }, duration);
 }
 function startBale(i){
-  runFieldAction(i, 'TRACTOR', 'Balen...', 3000, soundBale, () => {
+  const duration = 3000;
+  const fieldDiv = fieldsEl.children[i];
+  fieldsState[i].busy = true;
+  fieldDiv.querySelectorAll('.field-busy').forEach(el => el.remove());
+  fieldDiv.querySelectorAll('.field-content .field-caption').forEach(el => el.remove());
+
+  const overlay = document.createElement('div');
+  overlay.className = 'field-busy';
+  const cap = document.createElement('span');
+  cap.className = 'field-caption';
+  cap.textContent = 'Balen...';
+  overlay.appendChild(cap);
+  const drv = document.createElement('div');
+  drv.className = 'tractor';
+  drv.innerHTML = `<img class="tractor-img" src="${TRACTOR_IMG}" alt="tractor">`;
+  drv.style.animationDuration = duration + 'ms';
+  overlay.appendChild(drv);
+  fieldDiv.appendChild(overlay);
+  soundBale();
+
+  setTimeout(() => {
+    fieldDiv.querySelectorAll('.field-content').forEach(el => el.remove());
     fieldsState[i] = { stage:'hay_baled', cropKey:'hay' };
     renderFields();
     saveGame();
-  });
+  }, duration);
 }
 function collectHayBale(i){
   fieldsState[i].busy = true;
