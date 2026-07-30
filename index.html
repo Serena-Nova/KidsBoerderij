@@ -998,10 +998,16 @@ function startTed(i){
   soundTed();
 
   setTimeout(() => {
-    fieldDiv.querySelectorAll('.field-ted-gold').forEach(el => el.remove());
+    // Remove the old green field-content now so it can't flash back into view.
+    // Keep the gold overlay in place as a bridge while renderFields() prepares
+    // the new (also gold) hay_dried content, then clean it up once that's settled.
+    fieldDiv.querySelectorAll('.field-content').forEach(el => el.remove());
     fieldsState[i] = { stage:'hay_dried', cropKey:'hay' };
     renderFields();
     saveGame();
+    setTimeout(() => {
+      fieldDiv.querySelectorAll('.field-ted-gold').forEach(el => el.remove());
+    }, 400);
   }, duration);
 }
 function startBale(i){
