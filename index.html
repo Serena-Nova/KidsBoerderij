@@ -75,8 +75,8 @@
   .menu-banner{ flex:1; min-width:0; background-size:contain; background-repeat:no-repeat; background-position:center;
     min-height:60px; display:flex; align-items:center; justify-content:center; gap:8px; padding:8px 16px; }
   @media (min-width: 600px){
-    .menu-banner-wrap{ width:100%; max-width:420px; margin:auto auto 0; justify-content:center; }
-    .menu-banner{ max-height:130px; }
+    .menu-banner-wrap{ width:100%; max-width:520px; margin:auto auto 0; justify-content:center; }
+    .menu-banner{ max-height:165px; }
   }
   .menu-banner .title{ font-weight:800; font-size:1.35rem; color:#5a3d1f; text-shadow:0 2px 0 #fff8; outline:none;
     border-bottom:2px dashed transparent; padding:2px 4px; text-align:center; }
@@ -170,8 +170,8 @@
   .animal img.inline-icon-img{ width:48px; transform:scaleX(-1); }
   body.phase-night .animal{ opacity:0; }
   @keyframes wander{
-    0%{ transform:translateX(0) scaleX(-1); } 45%{ transform:translateX(var(--w, 60px)) scaleX(-1); }
-    50%{ transform:translateX(var(--w, 60px)) scaleX(1); } 95%{ transform:translateX(0) scaleX(1); } 100%{ transform:translateX(0) scaleX(-1); }
+    0%{ transform:translateX(calc(var(--w, 60px) * -0.5)) scaleX(-1); } 45%{ transform:translateX(calc(var(--w, 60px) * 0.5)) scaleX(-1); }
+    50%{ transform:translateX(calc(var(--w, 60px) * 0.5)) scaleX(1); } 95%{ transform:translateX(calc(var(--w, 60px) * -0.5)) scaleX(1); } 100%{ transform:translateX(calc(var(--w, 60px) * -0.5)) scaleX(-1); }
   }
   .product{ position:absolute; font-size:1.9rem; cursor:pointer; animation:pop 0.3s ease-out; filter:drop-shadow(0 2px 2px #0003); z-index:5; }
   @keyframes pop{ 0%{ transform:scale(0);} 100%{ transform:scale(1);} }
@@ -219,6 +219,10 @@
   .stock-empty{ text-align:center; color:#8a6b4a; font-weight:600; padding:6px 0; }
   .stock-shop-row{ display:flex; gap:12px; align-items:stretch; padding:10px 16px 28px; position:relative; z-index:2; }
   .shop-wrap{ flex:0 0 168px; }
+  @media (min-width: 600px){
+    .shop-wrap{ flex:0 0 280px; }
+    .shop-img-btn{ min-height:260px; }
+  }
   .shop-img-btn{ width:100%; height:100%; min-height:160px; border:none; background-color:transparent;
     background-image:url('images/shop.png'); background-size:contain; background-repeat:no-repeat; background-position:center;
     cursor:pointer; padding:0; }
@@ -1357,11 +1361,13 @@ function layoutPastureAnimals(){
   const pastureWidth = pastureEl.clientWidth || 300;
   const slotWidth = pastureWidth / n;
   els.forEach((el, i) => {
-    const jitter = (Math.random() - 0.5) * slotWidth * 0.3;
-    const baseLeftPx = slotWidth * i + slotWidth / 2 + jitter;
-    const leftPercent = Math.max(4, Math.min(94, (baseLeftPx / pastureWidth) * 100));
-    el.style.left = leftPercent + '%';
     const wanderPx = Math.max(24, Math.min(slotWidth * 0.4, pastureWidth * 0.14));
+    const halfW = wanderPx / 2;
+    const margin = halfW + 10;
+    const jitter = (Math.random() - 0.5) * Math.max(0, slotWidth - wanderPx) * 0.6;
+    const baseLeftPx = slotWidth * i + slotWidth / 2 + jitter;
+    const clampedPx = Math.max(margin, Math.min(pastureWidth - margin, baseLeftPx));
+    el.style.left = (clampedPx / pastureWidth * 100) + '%';
     el.style.setProperty('--w', wanderPx + 'px');
   });
 }
@@ -1372,11 +1378,13 @@ function layoutChickenYard(){
   const yardWidth = chickenYardEl.clientWidth || 300;
   const slotWidth = yardWidth / n;
   els.forEach((el, i) => {
-    const jitter = (Math.random() - 0.5) * slotWidth * 0.3;
-    const baseLeftPx = slotWidth * i + slotWidth / 2 + jitter;
-    const leftPercent = Math.max(4, Math.min(94, (baseLeftPx / yardWidth) * 100));
-    el.style.left = leftPercent + '%';
     const wanderPx = Math.max(20, Math.min(slotWidth * 0.4, yardWidth * 0.12));
+    const halfW = wanderPx / 2;
+    const margin = halfW + 10;
+    const jitter = (Math.random() - 0.5) * Math.max(0, slotWidth - wanderPx) * 0.6;
+    const baseLeftPx = slotWidth * i + slotWidth / 2 + jitter;
+    const clampedPx = Math.max(margin, Math.min(yardWidth - margin, baseLeftPx));
+    el.style.left = (clampedPx / yardWidth * 100) + '%';
     el.style.setProperty('--w', wanderPx + 'px');
   });
 }
