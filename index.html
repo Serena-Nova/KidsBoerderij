@@ -138,9 +138,6 @@
   .field-icon-img{ width:66px; height:auto; vertical-align:middle; filter:drop-shadow(0 2px 2px #0004); }
   .field-crop-img{ position:absolute; inset:0; width:100%; height:100%; object-fit:contain; }
   .field-crop-img.field-crop-cover{ object-fit:cover; transform:scale(1.35); }
-  @media (min-width: 600px){
-    .field-crop-img.field-crop-cover{ transform:scale(1.05); }
-  }
   .tool-icon-img{ width:52px; height:auto; display:block; margin:0 auto -6px; }
   .inline-icon-img{ width:1.35em; height:auto; vertical-align:middle; display:inline-block; }
   @keyframes driveX{
@@ -665,7 +662,7 @@ function celebrate(message){
 let level = 1;
 const LEVEL_GOALS = [
   { label:'Open de eerste 3 velden', check: () => fieldsUnlocked.slice(0,3).every(Boolean),                        progress: () => fieldsUnlocked.slice(0,3).filter(Boolean).length / 3,                                                          message:'🎉 Level 2! De akker begint vorm te krijgen!', reward:10 },
-  { label:'Ontgrendel alle zaadjes', check: () => CROPS.filter(c => c.tier <= 2).every(c => unlockedCrops.has(c.key)), progress: () => { const t = CROPS.filter(c => c.tier <= 2); return t.filter(c => unlockedCrops.has(c.key)).length / t.length; }, message:'🌟 Level 3! Alle zaden ontgrendeld!',       reward:15 },
+  { label:'Ontgrendel alle zaadjes tot nu toe', check: () => CROPS.filter(c => c.tier <= 2).every(c => unlockedCrops.has(c.key)), progress: () => { const t = CROPS.filter(c => c.tier <= 2); return t.filter(c => unlockedCrops.has(c.key)).length / t.length; }, message:'🌟 Level 3! Alle zaden ontgrendeld!',       reward:15 },
   { label:'Heb 4 dieren tegelijk in de wei', check: () => pastureEl.querySelectorAll('.animal').length >= ANIMAL_CAPACITY_START, progress: () => Math.min(1, pastureEl.querySelectorAll('.animal').length / ANIMAL_CAPACITY_START), message:'🐾 Level 4! De wei zit lekker vol!',      reward:15 },
   { label:'Koop al het gereedschap', check: () => TOOLS.every(t => equipment[t.key]),                                progress: () => TOOLS.filter(t => equipment[t.key]).length / TOOLS.length,                                                       message:'🧰 Level 5! Alle gereedschap in huis!',     reward:20 },
   { label:'Bereik dag 7',            check: () => dayCount >= 7,                                                   progress: () => Math.min(1, dayCount / 7),                                                                                       message:'📅 Level 6! Een hele week geboerd!',        reward:25 },
@@ -706,18 +703,18 @@ let coins = 8;
 
 const CROPS = [
   { key:'wheat',      em:'🌾', name:'Tarwe',      growMs:5000,  price:2,  unlockCost:0,  plantCost:1,  tier:1 },
-  { key:'carrot',     em:'🥕', name:'Wortel',     growMs:8000,  price:3,  unlockCost:10, plantCost:2,  tier:1 },
-  { key:'corn',       em:'🌽', name:'Mais',       growMs:12000, price:4,  unlockCost:20, plantCost:3,  tier:2 },
-  { key:'pumpkin',    em:'🎃', name:'Pompoen',    growMs:18000, price:6,  unlockCost:35, plantCost:5,  tier:2 },
-  { key:'potato',     em:'🥔', name:'Aardappel',  growMs:20000, price:8,  unlockCost:50, plantCost:6,  tier:3 },
-  { key:'strawberry', em:'🍓', name:'Aardbei',    growMs:22000, price:9,  unlockCost:55, plantCost:7,  tier:3 },
-  { key:'eggplant',   em:'🍆', name:'Aubergine',  growMs:25000, price:11, unlockCost:70, plantCost:8,  tier:4 },
-  { key:'cucumber',   em:'🥒', name:'Komkommer',  growMs:26000, price:12, unlockCost:75, plantCost:9,  tier:4 },
-  { key:'tomato',     em:'🍅', name:'Tomaat',     growMs:28000, price:14, unlockCost:90, plantCost:10, tier:5 },
-  { key:'broccoli',   em:'🥦', name:'Broccoli',   growMs:30000, price:15, unlockCost:95, plantCost:11, tier:5 },
+  { key:'carrot',     em:'🥕', name:'Wortel',     growMs:8000,  price:4,  unlockCost:10, plantCost:2,  tier:1 },
+  { key:'corn',       em:'🌽', name:'Mais',       growMs:12000, price:6,  unlockCost:20, plantCost:3,  tier:2 },
+  { key:'pumpkin',    em:'🎃', name:'Pompoen',    growMs:18000, price:9,  unlockCost:35, plantCost:5,  tier:2 },
+  { key:'potato',     em:'🥔', name:'Aardappel',  growMs:20000, price:11, unlockCost:50, plantCost:6,  tier:3 },
+  { key:'strawberry', em:'🍓', name:'Aardbei',    growMs:22000, price:13, unlockCost:55, plantCost:7,  tier:3 },
+  { key:'eggplant',   em:'🍆', name:'Aubergine',  growMs:25000, price:15, unlockCost:70, plantCost:8,  tier:4 },
+  { key:'cucumber',   em:'🥒', name:'Komkommer',  growMs:26000, price:16, unlockCost:75, plantCost:9,  tier:4 },
+  { key:'tomato',     em:'🍅', name:'Tomaat',     growMs:28000, price:18, unlockCost:90, plantCost:10, tier:5 },
+  { key:'broccoli',   em:'🥦', name:'Broccoli',   growMs:30000, price:20, unlockCost:95, plantCost:11, tier:5 },
   { key:'grass',      em:'🌿', name:'Gras',       growMs:5000,  price:2,  unlockCost:5,  plantCost:1,  tier:1 },
   { key:'hay',        em:'🌾', name:'Hooi',       growMs:6000,  price:8,  unlockCost:15, plantCost:2,  tier:2 },
-  { key:'leek',       em:'🥬', name:'Prei',       growMs:32000, price:17, unlockCost:105,plantCost:12, tier:6 },
+  { key:'leek',       em:'🥬', name:'Prei',       growMs:32000, price:22, unlockCost:105,plantCost:12, tier:6 },
 ];
 const CROP_BY_KEY = Object.fromEntries(CROPS.map(c => [c.key, c]));
 const unlockedCrops = new Set(['wheat']);
@@ -750,13 +747,13 @@ let chickenCapacity = CHICKEN_CAPACITY_START;
 function coopExpansionCost(){ return cost(15 + ((chickenCapacity - CHICKEN_CAPACITY_START) / CHICKEN_CAPACITY_STEP) * 12); }
 
 const TOOLS = [
+  { key:'farmFeed',      em:'🪣', name:'Boerderijvoer', price:8, portions:5, consumable:true, desc:'Voer voor de dieren in de wei', img:FARM_FEED_IMG },
+  { key:'chickenTreats', em:'🪣', name:'Kippensnacks',  price:8, portions:5, consumable:true, desc:'Lekkers voor de kippen',       img:CHICKEN_TREATS_IMG },
   { key:'plow',       em:'🚜', name:'Ploeg',         price:12, desc:'Sneller ploegen' },
   { key:'harvester',  em:'🌾', name:'Oogstmachine',  price:18, desc:'Dubbele oogst' },
   { key:'fertilizer', em:'🌿', name:'Mest',          price:15, desc:'Beter en sneller' },
   { key:'sower',      em:'🌱', name:'Zaaimachine',   price:25, desc:'Sneller zaaien' },
   { key:'sprinkler',  em:'🚿', name:'Sproeier',      price:30, desc:'Sneller groeien' },
-  { key:'farmFeed',      em:'🪣', name:'Boerderijvoer', price:8, portions:5, consumable:true, desc:'Voer voor de dieren in de wei', img:FARM_FEED_IMG },
-  { key:'chickenTreats', em:'🪣', name:'Kippensnacks',  price:8, portions:5, consumable:true, desc:'Lekkers voor de kippen',       img:CHICKEN_TREATS_IMG },
 ];
 const equipment = { plow:false, harvester:false, fertilizer:false, sower:false, sprinkler:false };
 
